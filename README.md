@@ -1,2 +1,2 @@
 # LoRa2HA
- Home Assistant hub for  LoRa devices, based on ESP32
+ Home Assistant hub for LoRa devices, based on ESP32

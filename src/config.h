@@ -11,13 +11,13 @@
 
 #define JSON_MAX_SIZE 10000
 
-char Wifi_ssid[EEPROM_TEXT_SIZE] = "Freebox-8B7BFF";  // WiFi SSID
-char Wifi_pass[EEPROM_TEXT_SIZE] = "laclewpadeJOJO04290";  // WiFi password
+char Wifi_ssid[EEPROM_TEXT_SIZE] = "";  // WiFi SSID
+char Wifi_pass[EEPROM_TEXT_SIZE] = "";  // WiFi password
 
-char mqtt_host[EEPROM_TEXT_SIZE] = "192.168.0.90";
+char mqtt_host[EEPROM_TEXT_SIZE] = "";
 int mqtt_port = 1883;
-char mqtt_user[EEPROM_TEXT_SIZE] = "toto";
-char mqtt_pass[EEPROM_TEXT_SIZE] = "toto";
+char mqtt_user[EEPROM_TEXT_SIZE] = "";
+char mqtt_pass[EEPROM_TEXT_SIZE] = "";
 
 char AP_ssid[9] = "lora2ha0";  // AP WiFi SSID
 char AP_pass[9] = "12345678";  // AP WiFi password

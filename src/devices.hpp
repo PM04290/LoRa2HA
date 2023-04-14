@@ -1,9 +1,5 @@
 #pragma once
 
-#include <RLDconfig.h>
-
-#define DEVICES_UNKNOWN_ID 254
-
 class Child {
   public:
     explicit Child(const char* baseuid, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit);

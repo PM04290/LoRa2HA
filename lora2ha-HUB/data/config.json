@@ -4,7 +4,7 @@
    "version_minor":1,
    "dev":[
       {
-         "address":10,
+         "address":99,
          "name":"DHTdemo",
          "childs":[
             {

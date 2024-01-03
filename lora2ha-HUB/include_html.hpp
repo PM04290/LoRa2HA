@@ -10,6 +10,10 @@ const char html_device[] PROGMEM = R"rawliteral(
     Name
     <input type="text" name="dev_#D#_name" value="%CNFNAME%">
   </label>
+  <label class="col-lg-1">
+    RL ver
+    <input type="number" min="0" max="4" name="dev_#D#_rlversion" value="%CNFRLVERSION%">
+  </label>
 </div>
 %GENCHILDS%
 <footer>
@@ -30,23 +34,6 @@ const char html_child[] PROGMEM = R"rawliteral(
     <input type="text" name="dev_#D#_childs_#C#_label" value="%CNFC_LABEL%">
   </label>
   <label class="col-2">
-    %TITLEC_TYPE%
-    <select name="dev_#D#_childs_#C#_sensortype" required>
-        <option value="0" %CNFC_S0%>Binary sensor</option>
-        <option value="1" %CNFC_S1%>Numeric sensor</option>
-        <option value="2" %CNFC_S2%>Switch</option>
-        <option value="3" %CNFC_S3%>Light</option>
-        <option value="4" %CNFC_S4%>Cover</option>
-        <option value="5" %CNFC_S5% disabled>Fan</option>
-        <option value="6" %CNFC_S6% disabled>HVac</option>
-        <option value="7" %CNFC_S7% disabled>Select</option>
-        <option value="8" %CNFC_S8%>Trigger</option>
-        <option value="9" %CNFC_S9% disabled>Custom</option>
-        <option value="10" %CNFC_S10%>Tag</option>
-        <option value="11" %CNFC_S11%>Text</option>
-    </select>
-  </label>
-  <label class="col-2">
     %TITLEC_DATA%
     <select name="dev_#D#_childs_#C#_datatype" required>
         <option value="0" %CNFC_D0%>Boolean</option>
@@ -57,12 +44,26 @@ const char html_child[] PROGMEM = R"rawliteral(
         <option value="5" %CNFC_D5%>Raw/Function</option>
     </select>
   </label>
-  <label class="col-3">
-    %TITLEC_CLASS%
-    <input type="text" name="dev_#D#_childs_#C#_class" list="classlist" value="%CNFC_CLASS%">
+  <label class="col-5">
+    %TITLEC_HA%
+    <input type="hidden" name="dev_#D#_childs_#C#_sensortype" value="%CNFC_STYPE_INT%">
+    <input type="hidden" name="dev_#D#_childs_#C#_class" value="%CNFC_CLASS%">
+    <input type="hidden" name="dev_#D#_childs_#C#_unit" value="%CNFC_UNIT%">
+    <input type="hidden" name="dev_#D#_childs_#C#_expire" value="%CNFC_EXPIRE%">
+    <input type="hidden" name="dev_#D#_childs_#C#_min" value="%CNFC_MINI%">
+    <input type="hidden" name="dev_#D#_childs_#C#_max" value="%CNFC_MAXI%">
+    <nav>
+     <ul>
+      <li id="li_dev_#D#_childs_#C#_sensortype">%CNFC_STYPE_STR%</li>
+      <li id="li_dev_#D#_childs_#C#_class">%CNFC_CLASS%</li>
+      <li id="li_dev_#D#_childs_#C#_unit">%CNFC_UNIT%</li>
+      <li id="li_dev_#D#_childs_#C#_expire">%CNFC_EXPIRE%</li>
+      <li id="li_dev_#D#_childs_#C#_min">%CNFC_MINI%</li>
+      <li id="li_dev_#D#_childs_#C#_max">%CNFC_MAXI%</li>
+     </ul>
+    </nav>
   </label>
   <label class="col-1">
-    %TITLEC_UNIT%
-    <input type="text" class="form-select" name="dev_#D#_childs_#C#_unit" list="unitlist" value="%CNFC_UNIT%">
+    <a href="#cancel" role="button"  class="secondary" data-target="modalha" onClick="editHA(event, #D#, #C#)">☰</a>
   </label>
 )rawliteral";

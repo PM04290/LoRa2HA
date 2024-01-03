@@ -189,6 +189,7 @@ String getHTMLforDevice(uint8_t d, Device* dev)
   {
     blocD.replace("%CNFADDRESS%", String(dev->getAddress()));
     blocD.replace("%CNFNAME%",  dev->getName());
+    blocD.replace("%CNFRLVERSION%",  String(dev->getRLversion()));
     //
     for (int c = 0; c < dev->getNbChild(); c++)
     {
@@ -197,6 +198,7 @@ String getHTMLforDevice(uint8_t d, Device* dev)
   } else {
     blocD.replace("%CNFADDRESS%", "");
     blocD.replace("%CNFNAME%",  "");
+    blocD.replace("%CNFRLVERSION%",  "0");
     replaceGen += "<div id='conf_child_" + String(d) + "_0' class='row'>chargement...</div>\n";
   }
   //
@@ -210,10 +212,8 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
   String kcnf;
   blocC.replace("%TITLEC_ID%", c ? "" : "ID");
   blocC.replace("%TITLEC_NAME%", c ? "" : "Label");
-  blocC.replace("%TITLEC_TYPE%", c ? "" : "Type");
   blocC.replace("%TITLEC_DATA%", c ? "" : "Data");
-  blocC.replace("%TITLEC_CLASS%", c ? "" : "Class");
-  blocC.replace("%TITLEC_UNIT%", c ? "" : "Unit");
+  blocC.replace("%TITLEC_HA%", c ? "" : "HA configuration");
 
   blocC.replace("#D#", String(d));
   blocC.replace("#C#", String(c));
@@ -221,30 +221,33 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
   {
     blocC.replace("%CNFC_ID%", String(ch->getId()));
     blocC.replace("%CNFC_LABEL%", String(ch->getLabel()));
-    for (int n = 0; n <= 10; n++) {
-      kcnf = "%CNFC_S" + String(n) + "%";
-      blocC.replace(kcnf, (int)ch->getSensorType() == n ? "selected" : "");
-    }
     for (int n = 0; n <= 5; n++) {
       kcnf = "%CNFC_D" + String(n) + "%";
       blocC.replace(kcnf, (int)ch->getDataType() == n ? "selected" : "");
     }
+    const char* sensortype[12] = {"Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"};
+    blocC.replace("%CNFC_STYPE_INT%", String((int)ch->getSensorType()));
+    blocC.replace("%CNFC_STYPE_STR%", sensortype[(int)ch->getSensorType()]);
     blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
     blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
+    blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
+    blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
+    blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
   } else
   {
     blocC.replace("%CNFC_ID%", "1");
     blocC.replace("%CNFC_LABEL%", "");
-    for (int n = 0; n <= 10; n++) {
-      kcnf = "%CNFC_S" + String(n) + "%";
-      blocC.replace(kcnf, "");
-    }
     for (int n = 0; n <= 5; n++) {
       kcnf = "%CNFC_D" + String(n) + "%";
       blocC.replace(kcnf, "");
     }
+    blocC.replace("%CNFC_STYPE_INT%", "");
+    blocC.replace("%CNFC_STYPE_STR%", "");
     blocC.replace("%CNFC_CLASS%", "");
     blocC.replace("%CNFC_UNIT%", "");
+    blocC.replace("%CNFC_EXPIRE%", "");
+    blocC.replace("%CNFC_MINI%", "");
+    blocC.replace("%CNFC_MAXI%", "");
   }
   return blocC;
 }
@@ -397,7 +400,8 @@ void onIndexRequest(AsyncWebServerRequest *request)
 #else
         html.replace("%WIFIMAC%", WiFi.macAddress());
 #endif
-        
+        html.replace("%CNFFREQ%", String(RadioFreq));
+
         html.replace("%WIFISSID%", Wifi_ssid);
         html.replace("%WIFIPASS%", Wifi_pass);
         html.replace("%MQTTHOST%", mqtt_host);
@@ -450,7 +454,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
           String attrchild = getValue(str, '_', 4);
           String sval(p->value().c_str());
 
-          //DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev, keydev, attrdev, keychild, attrchild, sval);
+          DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev, keydev, attrdev, keychild, attrchild, sval);
           if (keychild == "")
           {
             if (isValidNumber(sval))
@@ -509,6 +513,10 @@ void onConfigRequest(AsyncWebServerRequest * request)
     strcpy(mqtt_host, request->getParam("mqtthost", true)->value().c_str() );
     strcpy(mqtt_user, request->getParam("mqttuser", true)->value().c_str() );
     strcpy(mqtt_pass, request->getParam("mqttpass", true)->value().c_str() );
+    if (request->hasParam("cnffreq", true))
+    {
+      RadioFreq = request->getParam("cnffreq", true)->value().toInt();
+    }
 
     DEBUGln(AP_ssid);
     DEBUGln(Wifi_ssid);
@@ -516,8 +524,10 @@ void onConfigRequest(AsyncWebServerRequest * request)
     DEBUGln(mqtt_host);
     DEBUGln(mqtt_user);
     DEBUGln(mqtt_pass);
+    DEBUGln(RadioFreq);
 
     EEPROM.writeChar(0, AP_ssid[7]);
+    EEPROM.writeUShort(1, RadioFreq);
     EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);

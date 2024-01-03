@@ -89,6 +89,19 @@ function loadSelect() {
 			}
 		});
 	});
+	$("#dev_child_sensortype").on( "change", function() {
+		let n = $(this).val();
+		if (n < 2) {
+			$("#sensor_param").show();
+		} else {
+			$("#sensor_param").hide();
+			$("#dev_child_class").val("").change();
+			$("#dev_child_unit").val("").change();
+			$("#dev_child_expire").val(0).change();
+			$("#dev_child_min").val("").change();
+			$("#dev_child_max").val("").change();
+		}
+	});
 }
 
 function logpacket(elt) {
@@ -108,6 +121,39 @@ function addchild(elt) {
 	websocket.send("addchild;"+arr[1]+";"+nbchild);
 }
 
+const editHA = (event, d, c) => {
+	$("#modal_d").val(d).change();
+	$("#modal_c").val(c).change();
+	$("#dev_child_sensortype").val($("input[name='dev_"+d+"_childs_"+c+"_sensortype']").val()).change();
+	$("#dev_child_class").val($("input[name='dev_"+d+"_childs_"+c+"_class']").val()).change();
+	$("#dev_child_unit").val($("input[name='dev_"+d+"_childs_"+c+"_unit']").val()).change();
+	$("#dev_child_expire").val($("input[name='dev_"+d+"_childs_"+c+"_expire']").val()).change();
+	$("#dev_child_min").val($("input[name='dev_"+d+"_childs_"+c+"_min']").val()).change();
+	$("#dev_child_max").val($("input[name='dev_"+d+"_childs_"+c+"_max']").val()).change();
+	toggleModal(event);
+};
+
+const confirmModal = (event) => {
+	event.preventDefault();
+	let d = $("#modal_d").val();
+	let c = $("#modal_c").val();
+	$("input[name='dev_"+d+"_childs_"+c+"_sensortype']").val($("#dev_child_sensortype").val());
+	$("#li_dev_"+d+"_childs_"+c+"_sensortype").html($("#dev_child_sensortype option:selected").text());
+	$("input[name='dev_"+d+"_childs_"+c+"_class']").val($("#dev_child_class").val());
+	$("#li_dev_"+d+"_childs_"+c+"_class").html($("#dev_child_class").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_unit']").val($("#dev_child_unit").val());
+	$("#li_dev_"+d+"_childs_"+c+"_unit").html($("#dev_child_unit").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_expire']").val($("#dev_child_expire").val());
+	$("#li_dev_"+d+"_childs_"+c+"_expire").html($("#dev_child_expire").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_min']").val($("#dev_child_min").val());
+	$("#li_dev_"+d+"_childs_"+c+"_min").html($("#dev_child_min").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_max']").val($("#dev_child_max").val());
+	$("#li_dev_"+d+"_childs_"+c+"_max").html($("#dev_child_max").val());
+	const modal = document.getElementById(event.currentTarget.getAttribute("data-target"));
+	closeModal(modal);
+};
+
+var devicetype = ["Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"];
 var classdata = {
 	"binary_sensor":["battery","battery_charging","carbon_monoxyde","cold","connectivity","door","garage_door","gas","heat","light","lock","moisture","motion","moving","occupency","plug","power","presense","problem","running","safety","smoke","sound","tamper","update","vibration","window"],
 	"sensor":[

@@ -19,7 +19,7 @@
   --outline-width: 3px;
   --spacing: 0.6rem;
   --typography-spacing-vertical: 1.3rem;
-  --block-spacing-vertical: calc(var(--spacing) * 1.5);
+  --block-spacing-vertical: calc(var(--spacing) * 1.2);
   --block-spacing-horizontal: var(--spacing);
   --grid-spacing-vertical: 0;
   --grid-spacing-horizontal: var(--spacing);
@@ -147,27 +147,27 @@ h6 {
 
 h1 {
   --font-size: 2rem;
-  --typography-spacing-vertical: 3rem;
+  --typography-spacing-vertical: 2rem;
 }
 
 h2 {
   --font-size: 1.75rem;
-  --typography-spacing-vertical: 2.625rem;
+  --typography-spacing-vertical: 1.5rem;
 }
 
 h3 {
   --font-size: 1.5rem;
-  --typography-spacing-vertical: 2.25rem;
+  --typography-spacing-vertical: 1.25rem;
 }
 
 h4 {
   --font-size: 1.25rem;
-  --typography-spacing-vertical: 1.874rem;
+  --typography-spacing-vertical: 1.0rem;
 }
 
 h5 {
   --font-size: 1.125rem;
-  --typography-spacing-vertical: 1.6875rem;
+  --typography-spacing-vertical: 0.8rem;
 }
 
 [type=checkbox],
@@ -1874,7 +1874,7 @@ details[open] > summary::after {
  */
 article {
   margin: calc(var(--block-spacing-vertical)*0.3) 0;
-  padding: var(--block-spacing-vertical) var(--block-spacing-horizontal);
+  padding: calc(var(--block-spacing-vertical)*1.0) var(--block-spacing-horizontal);
   border-radius: var(--border-radius);
   background: var(--card-background-color);
   box-shadow: var(--card-box-shadow);

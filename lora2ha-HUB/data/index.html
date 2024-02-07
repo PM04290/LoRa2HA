@@ -35,7 +35,7 @@
 							Radio Freq.
 							<input type="number" id="cnffreq" name="cnffreq" min="135" max="525" value="%CNFFREQ%">
 						</label>
-						*Only DHCP mode is provided (not static IP address), use DHCP server configuration to allow dedicated address.
+						<i><small>*Only DHCP mode is provided (not static IP address), use DHCP server configuration to allow dedicated address.</small></i>
 					</div>
 				</article>
 				<article>
@@ -85,11 +85,6 @@
 				<!-- -->
 				<ins style="position:absolute;opacity:0" id="resultconf"><strong>Done!</strong></ins>
 				<button type="submit" class="secondary">Save all devices</button>
-				<!-- -->
-				<datalist id="classlist">
-				</datalist>
-				<datalist id="unitlist">
-				</datalist>
 			</form>
 		</details>
 		<details>
@@ -152,11 +147,13 @@
 							<option value="11">Text</option>
 						</select>
 					</label>
-					<div id="sensor_param">
+					<div id="ha_class">
 						<label>
 							Class
 							<input type="text" list="classlist" id="dev_child_class" value="">
 						</label>
+					</div>
+					<div id="ha_param">
 						<label>
 							Unit
 							<input type="text" list="unitlist" id="dev_child_unit" value="" class="form-select">
@@ -165,15 +162,22 @@
 							Expire after (sec, 0 = never)
 							<input type="number" id="dev_child_expire" value="">
 						</label>
-						<div class="row">
-							<label class="col-6">
+						<h3>Sensor calibration</h3>
+						<div class="grid">
+							<label class="col-8">
 								Min
 								<input type="number" id="dev_child_min" value="">
 							</label>
-							<label class="col-6">
+							<label class="col-8">
 								Max
 								<input type="number" id="dev_child_max" value="">
 							</label>
+						</div>
+						<div class="grid">
+							<div class="row" style="margin-left: calc(var(--bs-gutter-x)*-0.1);">
+								<div class="col-7">State result = (LoRa data) * &nbsp;<input type="number" id="dev_child_coefa" value=""  style="width:40%"></div>
+								<div class="col-5"> + &nbsp;<input type="number" id="dev_child_coefb" value="" style="width:50%"></div>
+							</div>
 						</div>
 					</div>
 					<footer>
@@ -183,6 +187,11 @@
 				</article>
 			</form>
 		</dialog>
+		<!-- -->
+		<datalist id="classlist">
+		</datalist>
+		<datalist id="unitlist">
+		</datalist>
 		</main>
 		<script>
 		window.addEventListener('load', onLoad);

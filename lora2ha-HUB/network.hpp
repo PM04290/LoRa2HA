@@ -4,6 +4,7 @@
 #include <Update.h>
 #ifdef USE_ETHERNET
 #include <ETH.h>
+static bool eth_connected = false;
 #endif
 
 #include "include_html.hpp"
@@ -11,9 +12,8 @@
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-
+static bool eth_allowed = false;
 bool wifiOK1time = false;
-static bool eth_connected = false;
 
 String uniqueid = "?";
 String version_major = "?";
@@ -228,11 +228,25 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     const char* sensortype[12] = {"Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"};
     blocC.replace("%CNFC_STYPE_INT%", String((int)ch->getSensorType()));
     blocC.replace("%CNFC_STYPE_STR%", sensortype[(int)ch->getSensorType()]);
-    blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
-    blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
-    blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
-    blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
-    blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
+    if ((int)ch->getSensorType() == 1)
+    {
+      blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
+      blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
+      blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
+      blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
+      blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
+      blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
+      blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
+    } else
+    {
+      blocC.replace("%CNFC_CLASS%", "");
+      blocC.replace("%CNFC_UNIT%", "");
+      blocC.replace("%CNFC_EXPIRE%", "");
+      blocC.replace("%CNFC_MINI%", "");
+      blocC.replace("%CNFC_MAXI%", "");
+      blocC.replace("%CNFC_CA%", "");
+      blocC.replace("%CNFC_CB%", "");
+    }
   } else
   {
     blocC.replace("%CNFC_ID%", "1");
@@ -248,6 +262,8 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     blocC.replace("%CNFC_EXPIRE%", "");
     blocC.replace("%CNFC_MINI%", "");
     blocC.replace("%CNFC_MAXI%", "");
+    blocC.replace("%CNFC_CA%", "");
+    blocC.replace("%CNFC_CB%", "");
   }
   return blocC;
 }
@@ -428,7 +444,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
   */
   if (request->hasParam("dev_0_address", true))
   {
-    DynamicJsonDocument docJSon(JSON_MAX_SIZE);
+    JsonDocument docJSon;
     JsonObject Jconfig = docJSon.to<JsonObject>();
     int params = request->params();
     for (int i = 0; i < params; i++)
@@ -454,7 +470,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
           String attrchild = getValue(str, '_', 4);
           String sval(p->value().c_str());
 
-          DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev, keydev, attrdev, keychild, attrchild, sval);
+          DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev.c_str(), keydev.c_str(), attrdev.c_str(), keychild.c_str(), attrchild.c_str(), sval.c_str());
           if (keychild == "")
           {
             if (isValidNumber(sval))
@@ -645,19 +661,18 @@ void initWeb()
   DEBUGln("HTTP server started");
 }
 
-void initNetwork()
-{
-  char txt[40];
-  bool wifiok = false;
-
-  WiFi.onEvent(WiFiEvent);
 #ifdef USE_ETHERNET
+void startETH()
+{
   ETH.begin();
-#else
+}
+#endif
+
+void startWifiSTA()
+{
   DEBUG("MAC : ");
   DEBUGln(WiFi.macAddress());
-
-  // Mode normal
+  WiFi.mode(WIFI_STA);
   WiFi.begin(Wifi_ssid, Wifi_pass);
   int tentativeWiFi = 0;
   // Attente de la connexion au réseau WiFi / Wait for connection
@@ -666,22 +681,50 @@ void initNetwork()
     delay( 500 ); DEBUG( "." );
     tentativeWiFi++;
   }
-  wifiok = WiFi.status() == WL_CONNECTED;
+}
 
-  if (wifiok == false)
-  {
-    DEBUGln("No wifi STA, set AP mode.");
-    // Mode AP
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(AP_ssid, AP_pass);
-    // Default IP Address is 192.168.4.1
-    // if you want to change uncomment below
-    // softAPConfig (local_ip, gateway, subnet)
+void startWifiAP()
+{
+  DEBUGln("set Wifi AP mode.");
+  // Mode AP
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_ssid, AP_pass);
+  // Default IP Address is 192.168.4.1
+  // if you want to change uncomment below
+  // softAPConfig (local_ip, gateway, subnet)
 
-    DEBUGf("AP WIFI : %s\n", AP_ssid);
-    DEBUG("AP IP Address: "); DEBUGln(WiFi.softAPIP());
-  }
+  DEBUGf("AP WIFI : %s\n", AP_ssid);
+  DEBUG("AP IP Address: "); DEBUGln(WiFi.softAPIP());
+}
+
+void initNetwork()
+{
+  bool wifiok = false;
+
+  WiFi.onEvent(WiFiEvent);
+
+#ifdef USE_ETHERNET
+  startETH();
+  delay(500);
+
+#ifdef PIN_ETH_LINK
+  pinMode(PIN_ETH_LINK, INPUT);
+  eth_allowed = (digitalRead(PIN_ETH_LINK) == LOW);
 #endif
+
+#endif
+  if (eth_allowed == false)
+  {
+    // Mode normal
+    startWifiSTA();
+
+    wifiok = WiFi.status() == WL_CONNECTED;
+    if (wifiok == false)
+    {
+      // Mode AP
+      startWifiAP();
+    }
+  }
   if (MDNS.begin(AP_ssid))
   {
     MDNS.addService("http", "tcp", 80);

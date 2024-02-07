@@ -25,18 +25,18 @@
 #error Only designed for ESP32
 #endif
 
-// LoRa pins    ESP32     ESP32-S2    OLIMEX-POE       WT32-ETH01
+// LoRa pins    ESP32     ESP32-S2    OLIMEX-POE      WT32-ETH01
 // pins                              (no SD used)
-// SCK  :         18         7           14              14
-// MISO :         19         9           15              15
-// MOSI :         23        11            2               2
-// NSS  :         5          5            5               12
-// NRST :         4         12            4               4
-// DIO0 :         2          3           36              35
+// SCK            18         7           14              14
+// MISO           19         9           15              15
+// MOSI           23        11            2               2
+// NSS            5          5            5              12
+// NRST           4         12            4               4
+// DIO0           2          3           36              35
 
 RadioLinkClass RLcomm;
 
-StaticJsonDocument<JSON_MAX_SIZE> docJson;
+JsonDocument docJson;
 
 typedef struct
 {
@@ -184,6 +184,7 @@ void setup()
     char code = EEPROM.readChar(0);
     if (code >= '0' && code <= '9')
     {
+      UIDcode = code - '0';
       AP_ssid[7] = code;
       RadioFreq = EEPROM.readUShort(1);
       if (RadioFreq == 0xFFFF) RadioFreq = 435;
@@ -205,9 +206,9 @@ void setup()
 
   if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 18))
   {
-    DEBUGln("LORA OK");
+    DEBUGf("LoRa ok at %dMHz\n", RadioFreq);
   } else {
-    DEBUGln("LORA ERROR");
+    DEBUGln("LoRa ERROR");
   }
 
   initNetwork();
@@ -240,11 +241,10 @@ void setup()
 void loop()
 {
   curtime = millis();
-  if (curtime > oldtime + 60000 || curtime < oldtime)
+  if (curtime > oldtime + 1000 || curtime < oldtime)
   {
     ntick++;
-
-    if (ntick >= 30) {
+    if (ntick >= 1800) { // 30min
       // TODO heartbeat
       ntick = 0;
     }
@@ -252,6 +252,23 @@ void loop()
   }
   mqtt.loop();
   processDevice();
+
+#ifdef USE_ETHERNET
+#ifdef PIN_ETH_LINK
+  // detect Ethernet connected
+  if ((eth_allowed == false) && (digitalRead(PIN_ETH_LINK) == LOW))
+  {
+    eth_allowed = true;
+    ESP.restart(); // TODO
+  }
+  // detect Ethernet disconnected
+  if ((eth_allowed == true) && (digitalRead(PIN_ETH_LINK) == HIGH))
+  {
+    eth_allowed = false;
+    ESP.restart(); // TODO
+  }
+#endif
+#endif
 }
 
 bool loadConfig()
@@ -284,6 +301,7 @@ bool loadConfig()
     {
       uint8_t address = deviceItem["address"].as<int>();
       const char* name = deviceItem["name"].as<const char*>();
+      DEBUGf("@ %d : %s\n", address, name);
       uint8_t rlversion = deviceItem["rlversion"].as<int>();
       if ((address > 0) && (dev = hub.addDevice(new Device(address, name, rlversion))))
       {
@@ -297,15 +315,16 @@ bool loadConfig()
             const char* lbl = childItem["label"].as<const char*>();
             rl_device_t st = (rl_device_t)childItem["sensortype"].as<int>();
             rl_data_t dt = (rl_data_t)childItem["datatype"].as<int>();
-            int expire = childItem["expire"].as<int>() | 0;
+            int expire = childItem["expire"] | 0L;
             int32_t mini(LONG_MIN);
             if (childItem["min"].is<int>())
               mini = childItem["min"].as<int>();
             int32_t maxi(LONG_MAX);
             if (childItem["max"].is<int>())
               maxi = childItem["max"].as<int>();
-            //DEBUGf("%s %d %d\n",name,mini,maxi);
-            dev->addChild(new Child(dev, address, id, lbl, st, dt, childItem["class"].as<const char*>(), childItem["unit"].as<const char*>(), expire, mini, maxi));
+            float coefA = childItem["coefa"] | (float)1.0;
+            float coefB = childItem["coefb"] | (float)0.0;
+            dev->addChild(new Child(dev, address, id, lbl, st, dt, childItem["class"].as<const char*>(), childItem["unit"].as<const char*>(), expire, mini, maxi, coefA, coefB));
           }
         }
       }

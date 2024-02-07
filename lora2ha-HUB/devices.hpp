@@ -4,7 +4,7 @@ class Device;
 
 class Child {
   public:
-    explicit Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi);
+    explicit Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi, float A, float B);
     uint8_t getId();
     char* getLabel();
     char* getClass();
@@ -12,6 +12,8 @@ class Child {
     int getExpire();
     int32_t getMini();
     int32_t getMaxi();
+    float getCoefA();
+    float getCoefB();
     rl_device_t getSensorType();
     rl_data_t getDataType();
     void doPacketV1ForHA(rl_packetV1_t p);
@@ -40,6 +42,8 @@ class Child {
     int _expire;
     int32_t _mini;
     int32_t _maxi;
+    float _coefA;
+    float _coefB;
     HABaseDeviceType* _HAdevice;
 };
 
@@ -261,7 +265,7 @@ uint8_t Device::getRLversion()
 }
 
 //************************************************
-Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi)
+Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi, float A, float B)
 {
   _device = parent;
   _label = (char*)malloc(strlen(lbl) + 1);
@@ -277,13 +281,19 @@ Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_de
   _expire = expire;
   _mini = mini;
   _maxi = maxi;
+  _coefA = A;
+  _coefB = B;
   _address = address;
   _id = id;
   _sensorType = st;
   _dataType = dt;
   _HAname = nullptr;
   _HAdevice = nullptr;
-  switch (st) {
+
+  DEBUGf("    %d : %s st[%d] dt{%d]\n", _id, _label, (int)_sensorType, (int)_dataType);
+
+  switch ((int)st)
+  {
     case S_BINARYSENSOR:
       _HAdevice = new HABinarySensor(_HAuid);
       if (strlen(_devclass))
@@ -352,8 +362,8 @@ Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_de
       break;
     case S_TEXTSENSOR:
       _HAdevice = new HASensor(_HAuid);
-      ((HASensor*)_HAdevice)->setDeviceClass(_devclass);
-      ((HASensor*)_HAdevice)->setUnitOfMeasurement(_unit);
+      //((HASensor*)_HAdevice)->setDeviceClass(_devclass);
+      //((HASensor*)_HAdevice)->setUnitOfMeasurement(_unit);
       break;
   }
   if (_HAdevice)
@@ -411,6 +421,15 @@ int32_t Child::getMaxi()
   return _maxi;
 }
 
+float Child::getCoefA()
+{
+  return _coefA;
+}
+float Child::getCoefB()
+{
+  return _coefB;
+}
+
 HABaseDeviceType* Child::getHADevice()
 {
   return _HAdevice;
@@ -418,7 +437,7 @@ HABaseDeviceType* Child::getHADevice()
 
 void Child::switchToLoRa(int state)
 {
-  DEBUGf("switch to lora V%d (%02X/%02X) %s=%d\n", _device->getRLversion(), _address, _id, _label, state);
+  DEBUGf("switch to lora V%d (%02d/%02d) %s=%d\n", _device->getRLversion(), _address, _id, _label, state);
   RLcomm.publishNum(_address, 0, _id, _sensorType, state, _device->getRLversion());
 }
 
@@ -486,7 +505,8 @@ void Child::doPacketV2ForHA(rl_packetV2_t p)
   float fval;
   String sval;
   char tag[9] = {0};
-  switch (st)
+
+  switch ((int)st)
   {
     case SV2_BINARYSENSOR:
       ((HABinarySensor*)_HAdevice)->setState(p.data.num.value > 0);
@@ -500,6 +520,7 @@ void Child::doPacketV2ForHA(rl_packetV2_t p)
         {
           fval = (float)p.data.num.value / (float)p.data.num.divider;
         }
+        fval = fval * _coefA + _coefB;
         if (fval >= _mini && fval <= _maxi)
         {
           ((HASensorNumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
@@ -548,6 +569,9 @@ void Child::doPacketV2ForHA(rl_packetV2_t p)
       HAUtils::byteArrayToStr(tag, p.data.rawByte, 4);
       ((HATagScanner*)_HAdevice)->tagScanned(tag);
       break;
+    case SV2_TEXTSENSOR:
+      ((HASensor*)_HAdevice)->setValue(p.data.text);
+      break;
   }
 }
 
@@ -561,7 +585,7 @@ void Child::doPacketV3ForHA(rl_packetV3_t p)
   float fval;
   String sval;
   char tag[9] = {0};
-  switch (st)
+  switch ((int)st)
   {
     case S_BINARYSENSOR:
       ((HABinarySensor*)_HAdevice)->setState(p.data.num.value > 0);
@@ -575,6 +599,7 @@ void Child::doPacketV3ForHA(rl_packetV3_t p)
         {
           fval = (float)p.data.num.value / (float)p.data.num.divider;
         }
+        fval = fval * _coefA + _coefB;
         if (fval >= _mini && fval <= _maxi)
         {
           ((HASensorNumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
@@ -593,6 +618,7 @@ void Child::doPacketV3ForHA(rl_packetV3_t p)
       ((HASwitch*)_HAdevice)->setState(p.data.num.value > 0);
       break;
     case S_LIGHT:
+      dt = (rl_data_t)(p.sensordataType & 0x07);
       if (dt == V_BOOL)
       {
         ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
@@ -606,6 +632,7 @@ void Child::doPacketV3ForHA(rl_packetV3_t p)
       }
       break;
     case S_COVER:
+      dt = (rl_data_t)(p.sensordataType & 0x07);
       if (dt == V_NUM)
       {
         ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
@@ -640,6 +667,9 @@ void Child::doPacketV3ForHA(rl_packetV3_t p)
     case S_TAG:
       HAUtils::byteArrayToStr(tag, p.data.rawByte, 4);
       ((HATagScanner*)_HAdevice)->tagScanned(tag);
+      break;
+    case S_TEXTSENSOR:
+      ((HASensor*)_HAdevice)->setValue(p.data.text);
       break;
   }
 }
@@ -648,18 +678,21 @@ void Child::doPacketForHA(rl_packet_t p)
 {
   byte sender = p.senderID;
   byte child = p.childID;
-  DEBUGf("Do packet from %d / %d : %s (%d)\n", sender, child, _HAuid, p.data.num.value);
   rl_device_t st = (rl_device_t)((p.sensordataType >> 3) & 0x1F);
   rl_data_t dt;
   float fval;
   String sval;
   char tag[9] = {0};
-  switch (st)
+  DEBUGf("Do packet from %d / %d : %s = %d (%02X)\n", sender, child, _HAuid, p.data.num.value, p.sensordataType);
+
+  switch ((int)st)
   {
     case S_BINARYSENSOR:
+      DEBUGf("Binary Sensor : %d\n", (int)(p.data.num.value > 0));
       ((HABinarySensor*)_HAdevice)->setState(p.data.num.value > 0);
       break;
     case S_NUMERICSENSOR:
+      DEBUGf("Numeric Sensor : %d\n", p.data.num.value);
       dt = (rl_data_t)(p.sensordataType & 0x07);
       if (dt == V_FLOAT)
       {
@@ -668,6 +701,7 @@ void Child::doPacketForHA(rl_packet_t p)
         {
           fval = (float)p.data.num.value / (float)p.data.num.divider;
         }
+        fval = fval * _coefA + _coefB;
         if (fval >= _mini && fval <= _maxi)
         {
           ((HASensorNumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
@@ -686,6 +720,7 @@ void Child::doPacketForHA(rl_packet_t p)
       ((HASwitch*)_HAdevice)->setState(p.data.num.value > 0);
       break;
     case S_LIGHT:
+      dt = (rl_data_t)(p.sensordataType & 0x07);
       if (dt == V_BOOL)
       {
         ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
@@ -699,6 +734,7 @@ void Child::doPacketForHA(rl_packet_t p)
       }
       break;
     case S_COVER:
+      dt = (rl_data_t)(p.sensordataType & 0x07);
       if (dt == V_NUM)
       {
         ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
@@ -733,6 +769,9 @@ void Child::doPacketForHA(rl_packet_t p)
     case S_TAG:
       HAUtils::byteArrayToStr(tag, p.data.rawByte, 4);
       ((HATagScanner*)_HAdevice)->tagScanned(tag);
+      break;
+    case S_TEXTSENSOR:
+      ((HASensor*)_HAdevice)->setValue(p.data.text);
       break;
   }
 }

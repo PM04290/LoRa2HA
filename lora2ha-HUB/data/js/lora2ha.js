@@ -22,11 +22,6 @@ function onLoad(event) {
 			//console.log(data);
 		});
 	});
-	classdata["sensor"].forEach(function (arrayItem) {
-		for (const property in arrayItem) {
-			$("#classlist").append($('<option>', {value:property}));
-		}
-	});
 }
 
 function initWebSocket() {
@@ -91,15 +86,32 @@ function loadSelect() {
 	});
 	$("#dev_child_sensortype").on( "change", function() {
 		let n = $(this).val();
-		if (n < 2) {
-			$("#sensor_param").show();
+		if (n <= 1) {
+			$("#ha_class").show();
+			$("#classlist").html('');
+			if (n == 0) {
+				$("#ha_param").hide();
+				classdata["binary_sensor"].forEach(function (arrayItem) {
+					$("#classlist").append($('<option>', {value:arrayItem}));
+				});
+			} else {
+				$("#ha_param").show();
+				classdata["sensor"].forEach(function (arrayItem) {
+					for (const property in arrayItem) {
+						$("#classlist").append($('<option>', {value:property}));
+					}
+				});
+			}
 		} else {
-			$("#sensor_param").hide();
+			$("#ha_class").hide();
+			$("#ha_param").hide();
 			$("#dev_child_class").val("").change();
 			$("#dev_child_unit").val("").change();
-			$("#dev_child_expire").val(0).change();
+			$("#dev_child_expire").val("").change();
 			$("#dev_child_min").val("").change();
 			$("#dev_child_max").val("").change();
+			$("#dev_child_coefa").val("").change();
+			$("#dev_child_coefb").val("").change();
 		}
 	});
 }
@@ -130,6 +142,8 @@ const editHA = (event, d, c) => {
 	$("#dev_child_expire").val($("input[name='dev_"+d+"_childs_"+c+"_expire']").val()).change();
 	$("#dev_child_min").val($("input[name='dev_"+d+"_childs_"+c+"_min']").val()).change();
 	$("#dev_child_max").val($("input[name='dev_"+d+"_childs_"+c+"_max']").val()).change();
+	$("#dev_child_coefa").val($("input[name='dev_"+d+"_childs_"+c+"_coefa']").val()).change();
+	$("#dev_child_coefb").val($("input[name='dev_"+d+"_childs_"+c+"_coefb']").val()).change();
 	toggleModal(event);
 };
 
@@ -137,18 +151,21 @@ const confirmModal = (event) => {
 	event.preventDefault();
 	let d = $("#modal_d").val();
 	let c = $("#modal_c").val();
+	let defc_ha = "";
 	$("input[name='dev_"+d+"_childs_"+c+"_sensortype']").val($("#dev_child_sensortype").val());
-	$("#li_dev_"+d+"_childs_"+c+"_sensortype").html($("#dev_child_sensortype option:selected").text());
+	defc_ha += $("#dev_child_sensortype option:selected").text();
 	$("input[name='dev_"+d+"_childs_"+c+"_class']").val($("#dev_child_class").val());
-	$("#li_dev_"+d+"_childs_"+c+"_class").html($("#dev_child_class").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_unit']").val($("#dev_child_unit").val());
-	$("#li_dev_"+d+"_childs_"+c+"_unit").html($("#dev_child_unit").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_expire']").val($("#dev_child_expire").val());
-	$("#li_dev_"+d+"_childs_"+c+"_expire").html($("#dev_child_expire").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_min']").val($("#dev_child_min").val());
-	$("#li_dev_"+d+"_childs_"+c+"_min").html($("#dev_child_min").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_max']").val($("#dev_child_max").val());
-	$("#li_dev_"+d+"_childs_"+c+"_max").html($("#dev_child_max").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_coefa']").val($("#dev_child_coefa").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_coefb']").val($("#dev_child_coefb").val());
+	let n = $("#dev_child_sensortype option:selected").val();
+	if (n == 1) {
+		defc_ha += $("#dev_child_class").val() + " "+ $("#dev_child_unit").val() + " " + $("#dev_child_expire").val() + " " + $("#dev_child_min").val() + " " + $("#dev_child_max").val() + " " + $("#dev_child_coefa").val() + " " + $("#dev_child_coefb").val();
+	}
+	$("#desc_dev_"+d+"_childs_"+c).html(defc_ha);
 	const modal = document.getElementById(event.currentTarget.getAttribute("data-target"));
 	closeModal(modal);
 };

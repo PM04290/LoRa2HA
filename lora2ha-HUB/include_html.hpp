@@ -52,16 +52,9 @@ const char html_child[] PROGMEM = R"rawliteral(
     <input type="hidden" name="dev_#D#_childs_#C#_expire" value="%CNFC_EXPIRE%">
     <input type="hidden" name="dev_#D#_childs_#C#_min" value="%CNFC_MINI%">
     <input type="hidden" name="dev_#D#_childs_#C#_max" value="%CNFC_MAXI%">
-    <nav>
-     <ul>
-      <li id="li_dev_#D#_childs_#C#_sensortype">%CNFC_STYPE_STR%</li>
-      <li id="li_dev_#D#_childs_#C#_class">%CNFC_CLASS%</li>
-      <li id="li_dev_#D#_childs_#C#_unit">%CNFC_UNIT%</li>
-      <li id="li_dev_#D#_childs_#C#_expire">%CNFC_EXPIRE%</li>
-      <li id="li_dev_#D#_childs_#C#_min">%CNFC_MINI%</li>
-      <li id="li_dev_#D#_childs_#C#_max">%CNFC_MAXI%</li>
-     </ul>
-    </nav>
+    <input type="hidden" name="dev_#D#_childs_#C#_coefa" value="%CNFC_CA%">
+    <input type="hidden" name="dev_#D#_childs_#C#_coefb" value="%CNFC_CB%">
+    <div id="desc_dev_#D#_childs_#C#">%CNFC_STYPE_STR% %CNFC_CLASS% %CNFC_UNIT% %CNFC_EXPIRE% %CNFC_MINI% %CNFC_MAXI% %CNFC_CA% %CNFC_CB%</div>
   </label>
   <label class="col-1">
     <a href="#cancel" role="button"  class="secondary" data-target="modalha" onClick="editHA(event, #D#, #C#)">☰</a>

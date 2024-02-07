@@ -1,18 +1,17 @@
 #pragma once
 
-#define VERSION "0.1"
+#define VERSION "0.2"
 
-// uncomment if want ETHERNET instead of WIFI (like OLIMEX_POE_ISO or WT32-ETH01)
+// uncomment if you want ETHERNET instead of WIFI (like OLIMEX_POE_ISO or WT32-ETH01)
 //#define USE_ETHERNET
 
-// uncomment if ETH link is available (like WT32-ETH01)
+// this define permit switch from WiFi to Ehternet (need define USE_ETHERNET)
+// uncomment if ETH link is available (like WT32-ETH01) or dedicated pin with swith button to swap from Wifi to Ehternet
 //#define PIN_ETH_LINK 33
 
 #define EEPROM_MAX_SIZE     256
 #define EEPROM_TEXT_OFFSET  16
 #define EEPROM_TEXT_SIZE    48
-
-#define JSON_MAX_SIZE 10000
 
 char Wifi_ssid[EEPROM_TEXT_SIZE] = "";  // WiFi SSID
 char Wifi_pass[EEPROM_TEXT_SIZE] = "";  // WiFi password
@@ -25,6 +24,7 @@ char mqtt_pass[EEPROM_TEXT_SIZE] = "";  // MQTT password
 char AP_ssid[9] = "lora2ha0";  // AP WiFi SSID
 char AP_pass[9] = "12345678";  // AP WiFi password
 
+uint8_t UIDcode = 0;
 uint16_t RadioFreq = 433;
 
 #define DEBUG_SERIAL

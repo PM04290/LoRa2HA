@@ -21,23 +21,13 @@
 RadioLinkClass RLcomm;
 
 #define HUB_ID          0
-/*
+
 #define SENSOR_ID      10
 #define CHILD_OPTARIF   1
 #define CHILD_BASE      2
 #define CHILD_HCHC      3
 #define CHILD_HCHP      4
 #define CHILD_PAPP      5
-#define CHILD_IISNT1    6
-#define CHILD_IISNT2    7
-#define CHILD_IISNT3    8
-*/
-#define SENSOR_ID      01
-#define CHILD_PAPP      1
-#define CHILD_BASE      2
-#define CHILD_OPTARIF   3
-#define CHILD_HCHC      4
-#define CHILD_HCHP      5
 #define CHILD_IISNT1    6
 #define CHILD_IISNT2    7
 #define CHILD_IISNT3    8

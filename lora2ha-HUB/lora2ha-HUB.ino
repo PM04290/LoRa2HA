@@ -1,5 +1,5 @@
 /*
-  Designed for ESP32 & ESP32-S2
+  Designed for ESP32's series
   Radio module : SX1278 (Ra-01 / Ra-02)
 
   Wifi AP
@@ -25,14 +25,15 @@
 #error Only designed for ESP32
 #endif
 
-// LoRa pins    ESP32     ESP32-S2    OLIMEX-POE      WT32-ETH01
-// pins                              (no SD used)
-// SCK            18         7           14              14
-// MISO           19         9           15              15
-// MOSI           23        11            2               2
-// NSS            5          5            5              12
-// NRST           4         12            4               4
-// DIO0           2          3           36              35
+//      PCB      MLH1          MLH2            MLH3         MLH4
+// LoRa       Lolin ESP32   OLIMEX-POE      WT32-ETH01     ESP32
+// pins        (S2 Mini)                                  MiniKit
+// SCK             7            14              14           18
+// MISO            9            15              15           19
+// MOSI           11             2               2           23
+// NSS             5             5              12            5
+// NRST           12             4              4             4
+// DIO0            3            36              35            2
 
 RadioLinkClass RLcomm;
 
@@ -127,7 +128,7 @@ void processDevice()
     DEBUGf("V%d[%d%%] %d <= %d:%d = %d\n", p.version, p.lqi, cp->destinationID, cp->senderID, cp->childID, cp->data.num.value);
     if (logPacket)
     {
-      notifyLogPacket(&p.packets.current);
+      notifyLogPacket(&p.packets.current, p.lqi);
     }
     Child* ch = hub.getChildById(p.packets.current.senderID, p.packets.current.childID);
     if (ch != nullptr)
@@ -221,7 +222,17 @@ void setup()
     // HA
     device.setUniqueId(mac, sizeof(mac));
     device.setManufacturer("M&L");
+#if defined(ARDUINO_LOLIN_S2_MINI)
+    device.setModel("LoRa2HA (MLH1)");
+#elif defined(ARDUINO_ESP32_POE_ISO)
+    device.setModel("LoRa2HA (MLH2)");
+#elif defined(ARDUINO_WT32_ETH01)
+    device.setModel("LoRa2HA (MLH3)");
+#elif defined(ARDUINO_D1_MINI32)
+    device.setModel("LoRa2HA (MLH4)");
+#else
     device.setModel("LoRa2HA");
+#endif
     device.setName(AP_ssid);
     device.setSoftwareVersion(VERSION);
 

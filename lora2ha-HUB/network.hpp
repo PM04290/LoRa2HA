@@ -315,11 +315,11 @@ void notifyConfig()
   }
 }
 
-void notifyLogPacket(rl_packet_t* p)
+void notifyLogPacket(rl_packet_t* p, int lqi)
 {
   if (ws.availableForWriteAll())
   {
-    String s = String(p->destinationID) + " <= " + String(p->senderID) + ":" + String(p->childID) + " = " + String(p->data.num.value);
+    String s = "(" + String(lqi) + ") " + String(p->destinationID) + " <= " + String(p->senderID) + ":" + String(p->childID) + " = " + String(p->data.num.value);
     docJson.clear();
     docJson["cmd"] = "log";
     docJson["packet"] = s;

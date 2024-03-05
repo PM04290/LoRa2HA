@@ -33,7 +33,6 @@
 #include "avr/sleep.h"
 #include "avr/wdt.h"
 
-
 //--- LoRa pin (implicit) ---
 // NRST : 2    (can be modified, but need RadioLink modification)
 // NSS  : 3    (can be modified, but need RadioLink modification)
@@ -49,21 +48,33 @@
 
 //--- VL33 Driver (for LoRa module) ---
 #define PIN_VL33_DRV    9
-#define DRVON           0
-#define DRVOFF          1
+#define DRVON           1
+#define DRVOFF          0
 
 //--- tools ---
-#define DEBUG_LED
+//#define DEBUG_LED
+
+#ifdef DEBUG_LED
 #define PIN_DEBUG_LED  10
+#define LED_INIT pinMode(PIN_DEBUG_LED, OUTPUT)
+#define LED_ON   digitalWrite(PIN_DEBUG_LED, HIGH)
+#define LED_OFF  digitalWrite(PIN_DEBUG_LED, LOW)
+#else
+#define LED_INIT
+#define LED_ON
+#define LED_OFF
+#endif
 
 //#define DEBUG_SERIAL
+
 #ifdef DEBUG_SERIAL
-#define PIN_DEBUG_TX   10
-#include "src/SendOnlySoftwareSerial.h"
-#define DEBUG(x) Serial.print(x);
-#define DEBUGln(x) Serial.println(x);
-SendOnlySoftwareSerial Serial(PIN_DEBUG_TX, false);
+#include <SendOnlySoftwareSerial.h>
+SendOnlySoftwareSerial Serial(10);  // Tx pin
+#define DEBUGinit() Serial.begin(2400)
+#define DEBUG(x) Serial.print(x)
+#define DEBUGln(x) Serial.println(x)
 #else
+#define DEBUGinit()
 #define DEBUG(x)
 #define DEBUGln(x)
 #endif
@@ -72,7 +83,7 @@ SendOnlySoftwareSerial Serial(PIN_DEBUG_TX, false);
 
 //#define WITH_BINARY1       PIN_IO_0
 //#define WITH_BINARY2       PIN_IO_1
-//#define WITH_BINARY3       PIN_IO_2
+#define WITH_BINARY3       PIN_IO_2
 
 //#define WITH_DALLAS        PIN_IO_0  // only on IO_0
 
@@ -89,7 +100,7 @@ SendOnlySoftwareSerial Serial(PIN_DEBUG_TX, false);
 // only binary sensor FALL to GND event
 //#define WAKEUP_ON_IO0
 //#define WAKEUP_ON_IO1
-//#define WAKEUP_ON_IO2
+#define WAKEUP_ON_IO2
 
 #ifdef WITH_DALLAS
 #include <OneWire.h>
@@ -134,45 +145,47 @@ ISR(PCINT0_vect)
   WDTcount = 0x7FFF; // overflow wdt counter
 }
 
-
 // initial setup
 void setup()
 {
-#ifdef DEBUG_SERIAL
-  Serial.begin(19200);
-  delay(100);
-  Serial.println("\nserial debug ON"));
-#endif
+  LED_INIT;
+  LED_ON;
 
-  // pins initialisation
-  pinMode(PIN_DEBUG_LED, OUTPUT);
-  digitalWrite(PIN_DEBUG_LED, LOW);
+  DEBUGinit();
 
-  // power LoRa
+  pinMode(PIN_IO_0, INPUT_PULLUP);
+  pinMode(PIN_IO_1, INPUT_PULLUP);
+  pinMode(PIN_IO_2, INPUT_PULLUP);
+
+  // secondary V33 active
   pinMode(PIN_VL33_DRV, OUTPUT);
   digitalWrite(PIN_VL33_DRV, DRVON);
   delay(100);
 
-  digitalWrite(PIN_DEBUG_LED, HIGH);
+  DEBUGln("\nStart");
+
   if (startLoRa())
   {
-    delay(300);
+    delay(100);
   }
-  digitalWrite(PIN_DEBUG_LED, LOW);
+  LED_OFF
+  delay(500);
 
 #ifdef WITH_DALLAS
   sensor0.begin();
   DallasOK = sensor0.getDeviceCount() > 0;
   if (DallasOK)
   {
+    DEBUG("Dallas OK");
     // ok
   } else
   {
-  for (byte b = 0; b < 3; b++)
+    DEBUG("Dallas Error");
+    for (byte b = 0; b < 3; b++)
     {
-      digitalWrite(PIN_DEBUG_LED, HIGH);
+      LED_ON;
       delay(50);
-      digitalWrite(PIN_DEBUG_LED, LOW);
+      LED_OFF;
       delay(50);
     }
   }
@@ -181,9 +194,7 @@ void setup()
 
 void loop()
 {
-  digitalWrite(PIN_DEBUG_LED, HIGH);
   sendData();
-  digitalWrite(PIN_DEBUG_LED, LOW);
   powerOff();
 }
 
@@ -193,15 +204,17 @@ bool startLoRa()
   if (LoraOK)
   {
     RLcomm.setWaitOnTx(true);
+    DEBUGln("LoRa OK");
     return true;
   } else
   {
+    DEBUGln("LoRa Error");
     // To show LoRa error on H1 LED
     for (byte b = 0; b < 3; b++)
     {
-      digitalWrite(PIN_DEBUG_LED, LOW);
+      LED_OFF;
       delay(100);
-      digitalWrite(PIN_DEBUG_LED, HIGH);
+      LED_ON;
       delay(100);
     }
   }
@@ -218,13 +231,14 @@ void sendData()
   static uint8_t oldBinary2 = 0xFF;
   if (LoraOK)
   {
+    DEBUGln("Send data");
     // VCC
     mVCC = readVcc();
     if (mVCC != oldvBat)
     {
       oldvBat = mVCC;
+      DEBUGln(" > VCC");
       RLcomm.publishFloat(HUB_UID, SENSOR_ID, CHILD_ID_VBAT, S_NUMERICSENSOR, mVCC, 1000, 1);
-      delay(100);
     }
 
 #ifdef WITH_THERMISTOR
@@ -235,8 +249,8 @@ void sendData()
     {
       oldTemp = valTemp;
       int chidID = WITH_THERMISTOR == PIN_IO_0 ? CHILD_ID_INPUT1 : WITH_THERMISTOR == PIN_IO_1 ? CHILD_ID_INPUT2 : CHILD_ID_INPUT3;
+      DEBUGln(" > Therm");
       RLcomm.publishFloat(HUB_UID, SENSOR_ID, chidID, S_NUMERICSENSOR, valTemp, 10, 1);
-      delay(100);
     }
 #endif
 
@@ -250,8 +264,8 @@ void sendData()
       if (abs(tDallas - oldTemp) > 3)
       {
         oldTemp = tDallas;
+        DEBUGln(" > Dallas");
         RLcomm.publishFloat(HUB_UID, SENSOR_ID, CHILD_ID_INPUT1, S_NUMERICSENSOR, tDallas, 10, 1);
-        delay(100);
       }
     }
 #endif
@@ -262,8 +276,8 @@ void sendData()
     {
       oldLux = valLux;
       int chidID = WITH_PHOTORESISTOR == PIN_IO_0 ? CHILD_ID_INPUT1 : WITH_PHOTORESISTOR == PIN_IO_1 ? CHILD_ID_INPUT2 : CHILD_ID_INPUT3;
+      DEBUGln(" > Photo");
       RLcomm.publishNum(HUB_UID, SENSOR_ID, chidID, S_NUMERICSENSOR, valLux);
-      delay(100);
     }
 #endif
 
@@ -273,8 +287,8 @@ void sendData()
     if (sBinary0 != oldBinary0)
     {
       oldBinary0 = sBinary0;
+      DEBUGln(" > Bin1");
       RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT1, S_BINARYSENSOR, !sBinary0);
-      delay(100);
     }
 #endif
 
@@ -284,8 +298,8 @@ void sendData()
     if (sBinary1 != oldBinary1)
     {
       oldBinary1 = sBinary1;
+      DEBUGln(" > Bin2");
       RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT2, S_BINARYSENSOR, !sBinary1);
-      delay(100);
     }
 #endif
 
@@ -295,25 +309,25 @@ void sendData()
     if (sBinary2 != oldBinary2)
     {
       oldBinary2 = sBinary2;
+      DEBUGln(" > Bin3");
       RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT3, S_BINARYSENSOR, !sBinary2);
-      delay(100);
     }
 #endif
   } else
   {
-    digitalWrite(PIN_DEBUG_LED, HIGH);
+    LED_ON;
     delay(50);
-    digitalWrite(PIN_DEBUG_LED, LOW);
+    LED_OFF;
   }
 }
 
 // Power Off driver : Watchdog timing and IO Interrupt
 void powerOff()
 {
+  DEBUGln("goto sleep");
   RLcomm.sleep();
   RLcomm.end();
   digitalWrite(PIN_VL33_DRV, DRVOFF);
-  pinMode(PIN_VL33_DRV, INPUT_PULLUP);
   ADCSRA &= ~(1 << ADEN); // Disable ADC
 
 #if defined(WAKEUP_ON_IO0) || defined(WAKEUP_ON_IO1) || defined(WAKEUP_ON_IO2)
@@ -344,22 +358,24 @@ void powerOff()
     sleep_cpu();
     wdt_reset();
   } while (WDTcount < 15);
+
+  // Back from sleep
   sleep_disable();
   wdt_disable();
   WDTcount = 0;
 
   cli();
-  // Back from sleep
   PCMSK0 &= ~bit(PCINT0); // Turn off interrupt pin
   PCMSK0 &= ~bit(PCINT1);
   PCMSK0 &= ~bit(PCINT7);
-
   sei();
 
-  pinMode(PIN_VL33_DRV, OUTPUT);
+  DEBUGln("wake up");
+
   digitalWrite(PIN_VL33_DRV, DRVON);
   ADCSRA |= (1 << ADEN); // ADC enabled
   delay(20);
+
   startLoRa();
 }
 

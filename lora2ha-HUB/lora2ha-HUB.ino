@@ -130,6 +130,14 @@ void processDevice()
     {
       notifyLogPacket(&p.packets.current, p.lqi);
     }
+	/* for ping testing
+    if (p.packets.current.senderID == 99)
+    {
+      RLcomm.publishNum(99, 0, 2, S_NUMERICSENSOR, p.lqi);
+      delay(100);
+      return;
+    }
+	*/
     Child* ch = hub.getChildById(p.packets.current.senderID, p.packets.current.childID);
     if (ch != nullptr)
     {
@@ -205,7 +213,7 @@ void setup()
     }
   }
 
-  if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 18))
+  if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 20))
   {
     DEBUGf("LoRa ok at %dMHz\n", RadioFreq);
   } else {

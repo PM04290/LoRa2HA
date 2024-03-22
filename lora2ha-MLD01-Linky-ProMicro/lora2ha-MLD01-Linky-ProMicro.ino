@@ -1,11 +1,20 @@
 /*
   Designed for Pro Micro (ATmega32U4)
-  Hardware PCB : MLD01 1.0
+  Hardware PCB : MLD01 version >= 1.0
 
+  Mode HISTORIQUE
 */
 #include <TeleInfo.h>
 
-//#define DEBUG_SERIAL
+#ifdef DEBUG_SERIAL
+#define DEBUGinit() Serial.begin(115200)
+#define DEBUG(x) Serial.print(x)
+#define DEBUGln(x) Serial.println(x)
+#else
+#define DEBUGinit()
+#define DEBUG(x)
+#define DEBUGln(x)
+#endif
 
 #define RL_SX1278 1
 #include <RadioLink.h>
@@ -23,6 +32,9 @@ RadioLinkClass RLcomm;
 #define HUB_ID          0
 
 #define SENSOR_ID      10
+
+#define CHILD_PARAM  0xFF
+
 #define CHILD_OPTARIF   1
 #define CHILD_BASE      2
 #define CHILD_HCHC      3
@@ -34,6 +46,8 @@ RadioLinkClass RLcomm;
 
 TeleInfo teleinfo(&Serial1);
 
+#define TRIPHASE
+
 #define AVGSIZE 5
 long arrPower[AVGSIZE];
 byte idxPower = 0;
@@ -43,6 +57,8 @@ uint32_t curTime;
 uint32_t Time1s = 0;
 uint32_t ConsoTime;
 const char oldTarif[10] = {0};
+
+uint8_t waitForConfig = 3; // 3 frame to analyze data and send config
 
 void setup()
 {
@@ -57,14 +73,11 @@ void setup()
 
   if (RLcomm.begin(433E6, NULL, NULL, 17))
   {
-#ifdef DEBUG_SERIAL
-    Serial.println(F("LORA OK"));
-#endif
+    RLcomm.setWaitOnTx(true);
+    DEBUGln("LORA OK");
   } else
   {
-#ifdef DEBUG_SERIAL
-    Serial.println(F("LORA Error"));
-#endif
+    DEBUGln(F("LORA Error"));
   }
   ConsoTime = millis() + 30000; // 30sec
 }
@@ -92,117 +105,133 @@ void loop()
     long meterHCHC = teleinfo.getLongVal("HCHC");
     long meterHCHP = teleinfo.getLongVal("HCHP");
     int papp = teleinfo.getLongVal("PAPP");
-    int Iinst = teleinfo.getLongVal("IINST");
-    int Iinst1 = 0;
-    int Iinst2 = 0;
-    int Iinst3 = 0;
-    if (Iinst == -1) // si triphasé ?
-    {
-      Iinst1 = teleinfo.getLongVal("IINST1");
-      Iinst2 = teleinfo.getLongVal("IINST2");
-      Iinst3 = teleinfo.getLongVal("IINST3");
-    }
-
-#ifdef DEBUG_SERIAL
-    Serial.println(F("--- tele info available ---"));
-    Serial.print(F("Option Tarifaire = "));
-    opTarif == NULL ? Serial.println("unknown") : Serial.println(opTarif);
-    Serial.print(F("PAPP = "));
-    papp < 0 ? Serial.println(F("unknown")) : Serial.println(papp);
-    Serial.print("BASE = ");
-    meterBASE < 0 ? Serial.println(F("unknown")) : Serial.println(meterBASE);
+#ifdef TRIPHASE
+    int Iinst1 = teleinfo.getLongVal("IINST1");
+    int Iinst2 = teleinfo.getLongVal("IINST2");
+    int Iinst3 = teleinfo.getLongVal("IINST3");
+#else
+    int Iinst1 = teleinfo.getLongVal("IINST");
 #endif
 
-    if (strcmp(opTarif, oldTarif) != 0)
-    {
-      // Send new Tarif if change
-      RLcomm.publishText(HUB_ID, SENSOR_ID, CHILD_OPTARIF, opTarif);
-      strcpy(oldTarif, opTarif);
-      delay(100);
-    }
+    DEBUGln(F("--- tele info available ---"));
+    DEBUG(F("Option Tarifaire = "));
+    DEBUGln(opTarif);
 
-    if (papp >= 0)
+    if (waitForConfig == 0)
     {
-      // Send power if value exeed 20w difference of agv 5 last values
-      arrPower[idxPower++] = papp;
-      if (idxPower >= AVGSIZE)
+
+      if (strcmp(opTarif, oldTarif) != 0)
       {
-        idxPower = 0;
-        pwrStart = false; // 1rst array is full
+        // Send new Tarif if change
+        RLcomm.publishText(HUB_ID, SENSOR_ID, CHILD_OPTARIF, opTarif);
+        strcpy(oldTarif, opTarif);
       }
-      if (pwrStart == false)
+
+      if (papp >= 0)
       {
-        long avgPower = 0;
-        for (byte i = 0; i < AVGSIZE; i++)
+        // Send power if value exeed 20w difference of agv 5 last values
+        arrPower[idxPower++] = papp;
+        if (idxPower >= AVGSIZE)
         {
-          avgPower += arrPower[i];
+          idxPower = 0;
+          pwrStart = false; // 1rst array is full
         }
-        avgPower = avgPower / AVGSIZE;
-
-#ifdef DEBUG_SERIAL
-        Serial.print(F("Avg Power = "));
-        Serial.print(avgPower);
-        Serial.print(F(" / "));
-        Serial.print(papp);
-        Serial.print(F(" -> "));
-        Serial.println(abs(avgPower - papp));
-#endif
-
-        if (abs(avgPower - papp) > 20)
+        if (pwrStart == false)
         {
+          long avgPower = 0;
           for (byte i = 0; i < AVGSIZE; i++)
           {
-            arrPower[i] = papp;
+            avgPower += arrPower[i];
           }
-          idxPower = 0;
-          RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_PAPP, S_NUMERICSENSOR, papp);
-          delay(100);
-          if (Iinst >= 0)
+          avgPower = avgPower / AVGSIZE;
+
+          DEBUG(F("Avg Power = "));
+          DEBUG(avgPower);
+          DEBUG(F(" / "));
+          DEBUG(papp);
+          DEBUG(F(" -> "));
+          DEBUGln(abs(avgPower - papp));
+
+          if (abs(avgPower - papp) > 20)
           {
-            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, S_NUMERICSENSOR, Iinst);
-          } else
-          {
-            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, S_NUMERICSENSOR, Iinst1);
-            delay(100);
-            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT2, S_NUMERICSENSOR, Iinst2);
-            delay(100);
-            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT3, S_NUMERICSENSOR, Iinst3);
+            for (byte i = 0; i < AVGSIZE; i++)
+            {
+              arrPower[i] = papp;
+            }
+            idxPower = 0;
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_PAPP, papp);
+#ifdef TRIPHASE
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, Iinst1);
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT2, Iinst2);
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT3, Iinst3);
+#else
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, Iinst);
+#endif
           }
         }
       }
-    }
 
-    // Send total counter every 10 minutes in KWh
-    if (curTime > ConsoTime)
-    {
-      ConsoTime = millis() + 600000;
-      bool forcePAPP = false;
-      if (meterBASE > 1)
+      // Send total counter every 10 minutes in KWh
+      if (curTime > ConsoTime)
       {
-        RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_BASE, S_NUMERICSENSOR, meterBASE, 1000, 1);
-        forcePAPP = true;
-        delay(100);
+        ConsoTime = (millis() + 600000) | 1;
+        bool forcePAPP = false;
+        if (meterBASE > 1)
+        {
+          RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_BASE, meterBASE, 1000, 1);
+          forcePAPP = true;
+        }
+        if (meterHCHC > 1)
+        {
+          RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_HCHC, meterHCHC, 1000, 1);
+          forcePAPP = true;
+        }
+        if (meterHCHP > 1)
+        {
+          RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_HCHP, meterHCHP, 1000, 1);
+          forcePAPP = true;
+        }
+        if (forcePAPP)
+        {
+          RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_PAPP, papp);
+          forcePAPP = true;
+        }
       }
-      if (meterHCHC > 1)
-      {
-        RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_HCHC, S_NUMERICSENSOR, meterHCHC, 1000, 1);
-        forcePAPP = true;
-        delay(100);
-      }
-      if (meterHCHP > 1)
-      {
-        RLcomm.publishFloat(HUB_ID, SENSOR_ID, CHILD_HCHP, S_NUMERICSENSOR, meterHCHP, 1000, 1);
-        forcePAPP = true;
-        delay(100);
-      }
-      if (forcePAPP)
-      {
-        RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_PAPP, S_NUMERICSENSOR, papp);
-        forcePAPP = true;
-        delay(100);
+    } else {
+      waitForConfig--;
+      if (waitForConfig == 0) { // send config
+        // publish config
+        rl_config_t cnf;
+        memset(&cnf, 0, sizeof(cnf));
+        //
+        cnf.childID = CHILD_OPTARIF;
+        cnf.deviceType = (uint8_t)S_TEXTSENSOR;
+        cnf.dataType = (uint8_t)V_TEXT;
+        RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+        //
+        cnf.deviceType = (uint8_t)S_NUMERICSENSOR;
+        cnf.dataType = (uint8_t)V_NUM;
+        if (strcmp(opTarif, "BASE") == 0) {
+          cnf.childID = CHILD_BASE;
+          RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+        } else {
+          cnf.childID = CHILD_HCHC;
+          RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+          cnf.childID = CHILD_HCHP;
+          RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+        }
+        cnf.childID = CHILD_PAPP;
+        RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+        cnf.childID = CHILD_IISNT1;
+        RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+#ifdef TRIPHASE
+        cnf.childID = CHILD_IISNT2;
+        RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+        cnf.childID = CHILD_IISNT3;
+        RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
+#endif
       }
     }
-
     // restore serial input
     Serial1.begin(1200);
     teleinfo.begin();

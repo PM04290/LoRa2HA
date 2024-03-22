@@ -11,6 +11,7 @@ function onLoad(event) {
 			$("#resultconf").fadeTo(100, 1);
 			window.setTimeout(function() {$("#resultconf").fadeTo(500, 0)}, 2000);
 			//console.log(data);
+			window.setTimeout(function() {alert("The HUB must be reset for the configuration to be active")}, 2200);
 		});
 	});
 	$('#formwifi').submit(function( event ) {
@@ -58,6 +59,19 @@ function WSonMessage(event) {
 			if (cmd === "log") {
 				console.log( value );
 			}
+			if (cmd === "devnotify") {
+				let dev = $('div[id^="' + key +'"]');
+				if (dev.length == 0) {
+					$("#conf_dev").append( value );
+					loadSelect();
+				}
+			}
+			if (cmd === "childnotify") {
+				let arr = key.split(/[_]+/);
+				let d = parseInt(arr[2]);
+				$("<div id='"+key+"' class='row'>"+value+"<div>").insertBefore("#footer_"+(d+1));
+				loadSelect();
+			}
 		} else {
 			if (cmd === "loadselect") {
 				loadSelect();
@@ -88,6 +102,7 @@ function loadSelect() {
 		let n = $(this).val();
 		if (n <= 1) {
 			$("#ha_class").show();
+			$("#ha_category").show();
 			$("#classlist").html('');
 			if (n == 0) {
 				$("#ha_param").hide();
@@ -102,8 +117,13 @@ function loadSelect() {
 					}
 				});
 			}
+		} else if (n == 12) {
+			$("#ha_class").hide();
+			$("#ha_category").show();
+			$("#ha_param").hide();
 		} else {
 			$("#ha_class").hide();
+			$("#ha_category").hide();
 			$("#ha_param").hide();
 			$("#dev_child_class").val("").change();
 			$("#dev_child_unit").val("").change();
@@ -112,6 +132,22 @@ function loadSelect() {
 			$("#dev_child_max").val("").change();
 			$("#dev_child_coefa").val("").change();
 			$("#dev_child_coefb").val("").change();
+		}
+	});
+	$("input[name$='_name']").on( "change", function() {
+		let n = $(this).val();
+		if (!n) {
+			$(this).attr("aria-invalid", true);
+		} else {
+			$(this).removeAttr("aria-invalid");
+		}
+	});
+	$("input[name$='_label']").on( "change", function() {
+		let n = $(this).val();
+		if (!n) {
+			$(this).attr("aria-invalid", true);
+		} else {
+			$(this).removeAttr("aria-invalid");
 		}
 	});
 }
@@ -129,7 +165,8 @@ function adddev(elt) {
 function addchild(elt) {
 	var arr = elt.id.split(/[_]+/);
 	var nbchild = $("div[id^='conf_child_"+arr[1]+"']").length;
-	$("<div id='conf_child_"+arr[1]+"_"+nbchild+"' class='row'>Loading...</div>").insertAfter("#conf_child_"+arr[1]+"_"+(nbchild-1));
+	let d = parseInt(arr[1])+1;
+	$("<div id='conf_child_"+arr[1]+"_"+nbchild+"' class='row'>Loading...</div>").insertBefore("#footer_"+d);
 	websocket.send("addchild;"+arr[1]+";"+nbchild);
 }
 
@@ -138,6 +175,7 @@ const editHA = (event, d, c) => {
 	$("#modal_c").val(c).change();
 	$("#dev_child_sensortype").val($("input[name='dev_"+d+"_childs_"+c+"_sensortype']").val()).change();
 	$("#dev_child_class").val($("input[name='dev_"+d+"_childs_"+c+"_class']").val()).change();
+	$("#dev_child_category").val($("input[name='dev_"+d+"_childs_"+c+"_category']").val()).change();
 	$("#dev_child_unit").val($("input[name='dev_"+d+"_childs_"+c+"_unit']").val()).change();
 	$("#dev_child_expire").val($("input[name='dev_"+d+"_childs_"+c+"_expire']").val()).change();
 	$("#dev_child_min").val($("input[name='dev_"+d+"_childs_"+c+"_min']").val()).change();
@@ -155,6 +193,7 @@ const confirmModal = (event) => {
 	$("input[name='dev_"+d+"_childs_"+c+"_sensortype']").val($("#dev_child_sensortype").val());
 	defc_ha += $("#dev_child_sensortype option:selected").text();
 	$("input[name='dev_"+d+"_childs_"+c+"_class']").val($("#dev_child_class").val());
+	$("input[name='dev_"+d+"_childs_"+c+"_category']").val($("#dev_child_category").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_unit']").val($("#dev_child_unit").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_expire']").val($("#dev_child_expire").val());
 	$("input[name='dev_"+d+"_childs_"+c+"_min']").val($("#dev_child_min").val());
@@ -170,7 +209,7 @@ const confirmModal = (event) => {
 	closeModal(modal);
 };
 
-var devicetype = ["Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"];
+var devicetype = ["Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text", "Input number"];
 var classdata = {
 	"binary_sensor":["battery","battery_charging","carbon_monoxyde","cold","connectivity","door","garage_door","gas","heat","light","lock","moisture","motion","moving","occupency","plug","power","presense","problem","running","safety","smoke","sound","tamper","update","vibration","window"],
 	"sensor":[
@@ -184,8 +223,9 @@ var classdata = {
 		{"data_size":["bit","kbit","Mbit","Gbit","B","kB","MB","GB","TB"]},
 		{"date":[]},
 		{"distance":["km","m","cm","mm","mi","yd","in"]},
-		{"duraction":["d","h","min","sec"]},
+		{"duration":["d","h","min","sec"]},
 		{"energy":["Wh","kWh","MWh"]},
+		{"energy_storage":["Wh","kWh","MWh"]},
 		{"frequency":["Hz","kHz","MHz","GHz"]},
 		{"gas":["m³","ft³","CCF"]},
 		{"humidity":["%"]},
@@ -194,20 +234,25 @@ var classdata = {
 		{"moisture":["%"]},
 		{"monetary":["€","$"]},
 		{"nitrogen_dioxyde":["µg/m³"]},{"nitrogen_monoxyde":["µg/m³"]},{"nitrous_oxyde":["µg/m³"]},{"ozone":["µg/m³"]},
+		{"ph":[""]},
 		{"pm1":["µg/m³"]},{"pm10":["µg/m³"]},{"pm25":["µg/m³"]},
-		{"power_factor":["%"]},
 		{"power":["W","kW"]},
-		{"precipitation":["cm","in","mm"]},{"precipitation_intgensity":["in/d","in/h","mm/d","mm/h"]},
+		{"power_factor":["%"]},
+		{"precipitation":["cm","in","mm"]},{"precipitation_intensity":["in/d","in/h","mm/d","mm/h"]},
 		{"pressure":["Pa","kPa","hPa","bar","cbar","mbar","mmHg","inHg","psi"]},
 		{"reactive_power":["var"]},
-		{"signal_strength":["dB","dBA"]},
+		{"signal_strength":["dB","dBm"]},
+		{"sound_pressure":["dB","dBA"]},
 		{"speed":["ft/s","in/d","in/h","km/h","kn","m/s","mph","mm/d"]},
 		{"sulphur_dioxyde":["µg/m³"]},
 		{"temperature":["°C","°F"]},
 		{"timestamp":[]},
 		{"volatile_organic_compounds":["µg/m³"]},
+		{"volatile_organic_compounds_parts":["ppm","ppb"]},
 		{"voltage":["V","mV"]},
 		{"volume":["L","mL","gal","fl.oz.","m³","ft³","CCF"]},
+		{"volume_flow_rate":["m³/h", "ft³/min", "L/min", "gal/min"]},
+		{"volume_storage":["L","mL","gal","fl.oz.","m³","ft³","CCF"]},
 		{"water":["L","gal","m³","ft³","CCF"]},
 		{"weight":["kg","g","mg","µg","oz","lb","st"]},
 		{"wind_speed":["ft/s","km/h","kn","m/s","mph"]},

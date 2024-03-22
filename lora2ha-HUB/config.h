@@ -1,9 +1,9 @@
 #pragma once
 
-#define VERSION "0.2"
+#define VERSION "0.4"
 
 // uncomment if you want ETHERNET instead of WIFI (like OLIMEX_POE_ISO or WT32-ETH01)
-//#define USE_ETHERNET
+#define USE_ETHERNET
 
 // this define permit switch from WiFi to Ehternet (need define USE_ETHERNET)
 // uncomment if ETH link is available (like WT32-ETH01) or dedicated pin with swith button to swap from Wifi to Ehternet

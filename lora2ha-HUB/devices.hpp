@@ -1,13 +1,21 @@
+// https://developers.home-assistant.io/docs/core/entity/sensor/
 #pragma once
+
+enum EntityCategory {
+  CategoryAuto = 0,
+  CategoryConfig,
+  CategoryDiagnostic
+};
 
 class Device;
 
 class Child {
   public:
-    explicit Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi, float A, float B);
+    explicit Child(Device* parent, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, EntityCategory ec, const char* unit, int expire, int32_t mini, int32_t maxi, float A, float B);
     uint8_t getId();
     char* getLabel();
     char* getClass();
+    EntityCategory getCategory();
     char* getUnit();
     int getExpire();
     int32_t getMini();
@@ -16,9 +24,6 @@ class Child {
     float getCoefB();
     rl_device_t getSensorType();
     rl_data_t getDataType();
-    void doPacketV1ForHA(rl_packetV1_t p);
-    void doPacketV2ForHA(rl_packetV2_t p);
-    void doPacketV3ForHA(rl_packetV3_t p);
     void doPacketForHA(rl_packet_t p);
     HABaseDeviceType* getHADevice();
     // HA -> LoRa commands
@@ -28,9 +33,9 @@ class Child {
     void lightColorTemperature(uint16_t temperature);
     void lightRGBColor(HALight::RGBColor color);
     void coverToLoRa(HACover::CoverCommand cmd);
+    void inputnumberToLoRa(HANumeric number);
   protected:
     Device* _device;
-    uint8_t _address;
     uint8_t _id;
     char* _label;
     char* _HAuid;
@@ -38,6 +43,7 @@ class Child {
     rl_device_t _sensorType;
     rl_data_t _dataType;
     char* _devclass;
+    EntityCategory _category;
     char* _unit;
     int _expire;
     int32_t _mini;
@@ -49,7 +55,7 @@ class Child {
 
 class Device {
   public:
-    explicit Device(uint8_t address, const char* name, uint8_t rlversion);
+    explicit Device(uint8_t address, const char* name, uint8_t rlversion = 0);
     Child* addChild(Child* ch);
     uint8_t getAddress();
     char* getName();
@@ -69,8 +75,10 @@ class HubDev {
   public:
     explicit HubDev();
     uint8_t getNbDevice();
+    uint8_t getIdxDeviceByAddress(uint8_t address);
     Device* addDevice(Device* dev);
     Device* getDevice(int n);
+    Device* getDeviceById(uint8_t address);
     Child* getChildById(uint8_t address, uint8_t id);
     Child* getChildByHAbase(HABaseDeviceType* HAdevice);
   protected:
@@ -134,6 +142,15 @@ void onCoverCommand(HACover::CoverCommand cmd, HACover* sender)
   }
 }
 
+void onNumberCommand(HANumeric number, HANumber * sender)
+{
+  Child* ch = hub.getChildByHAbase(sender);
+  if (ch)
+  {
+    ch->inputnumberToLoRa(number);
+  }
+}
+
 //************************************************
 HubDev::HubDev()
 {
@@ -146,11 +163,37 @@ uint8_t HubDev::getNbDevice()
   return _nbDevice;
 }
 
+uint8_t HubDev::getIdxDeviceByAddress(uint8_t address)
+{
+  for (uint8_t d = 0; d < _nbDevice; d++)
+  {
+    Device* dev = _deviceList[d];
+    if (dev->getAddress() == address)
+    {
+      return d;
+    }
+  }
+  return 0xFF;
+}
+
 Device* HubDev::getDevice(int n)
 {
   if (n < _nbDevice)
   {
     return _deviceList[n];
+  }
+  return nullptr;
+}
+
+Device* HubDev::getDeviceById(uint8_t address)
+{
+  for (uint8_t d = 0; d < _nbDevice; d++)
+  {
+    Device* dev = _deviceList[d];
+    if (dev->getAddress() == address)
+    {
+      return dev;
+    }
   }
   return nullptr;
 }
@@ -265,17 +308,21 @@ uint8_t Device::getRLversion()
 }
 
 //************************************************
-Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, const char* unit, int expire, int32_t mini, int32_t maxi, float A, float B)
+Child::Child(Device* parent, uint8_t id, const char* lbl, rl_device_t st, rl_data_t dt, const char* devclass, EntityCategory ec, const char* unit, int expire = 0, int32_t mini = LONG_MIN, int32_t maxi = LONG_MAX, float A = 1., float B = 0.)
 {
   _device = parent;
+  _id = id;
   _label = (char*)malloc(strlen(lbl) + 1);
   strcpy(_label, lbl);
   _HAuid = (char*)malloc(strlen(_device->getName()) + strlen(_label) + 2);
   strcpy(_HAuid, _device->getName());
   strcat(_HAuid, "_");
   strcat(_HAuid, _label);
+  _sensorType = st;
+  _dataType = dt;
   _devclass = (char*)malloc(strlen(devclass) + 1);
   strcpy(_devclass, devclass);
+  _category = ec;
   _unit = (char*)malloc(strlen(unit) + 1);
   strcpy(_unit, unit);
   _expire = expire;
@@ -283,16 +330,12 @@ Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_de
   _maxi = maxi;
   _coefA = A;
   _coefB = B;
-  _address = address;
-  _id = id;
-  _sensorType = st;
-  _dataType = dt;
   _HAname = nullptr;
   _HAdevice = nullptr;
 
-  DEBUGf("    %d : %s st[%d] dt{%d]\n", _id, _label, (int)_sensorType, (int)_dataType);
+  DEBUGf("   %d : %s st[%d] dt{%d] HA=%s\n", _id, _label, (int)_sensorType, (int)_dataType, _HAuid);
 
-  switch ((int)st)
+  switch ((int)_sensorType)
   {
     case S_BINARYSENSOR:
       _HAdevice = new HABinarySensor(_HAuid);
@@ -318,6 +361,10 @@ Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_de
       if (_expire)
       {
         ((HASensorNumber*)_HAdevice)->setExpireAfter(_expire);
+      }
+      if (_category == CategoryDiagnostic)
+      {
+        _HAdevice->setCategory((uint8_t)_category);
       }
       break;
     case S_SWITCH:
@@ -365,6 +412,21 @@ Child::Child(Device* parent, uint8_t address, uint8_t id, const char* lbl, rl_de
       //((HASensor*)_HAdevice)->setDeviceClass(_devclass);
       //((HASensor*)_HAdevice)->setUnitOfMeasurement(_unit);
       break;
+    case S_INPUTNUMBER:
+      _HAdevice = new HANumber(_HAuid);
+      if (strlen(_devclass))
+      {
+        ((HANumber*)_HAdevice)->setDeviceClass(_devclass);
+      }
+      if (strlen(_unit))
+      {
+        ((HANumber*)_HAdevice)->setUnitOfMeasurement(_unit);
+      }
+      if (_category != CategoryAuto)
+      {
+        _HAdevice->setCategory((uint8_t)_category);
+      }
+      break;
   }
   if (_HAdevice)
   {
@@ -399,6 +461,11 @@ rl_data_t Child::getDataType()
 char* Child::getClass()
 {
   return _devclass;
+}
+
+EntityCategory Child::getCategory()
+{
+  return _category;
 }
 
 char* Child::getUnit()
@@ -437,8 +504,8 @@ HABaseDeviceType* Child::getHADevice()
 
 void Child::switchToLoRa(int state)
 {
-  DEBUGf("switch to lora V%d (%02d/%02d) %s=%d\n", _device->getRLversion(), _address, _id, _label, state);
-  RLcomm.publishNum(_address, 0, _id, _sensorType, state, _device->getRLversion());
+  DEBUGf("switch to lora V%d (%02d/%02d) %s=%d\n", _device->getRLversion(), _device->getAddress(), _id, _label, state);
+  RLcomm.publishSwitch(_device->getAddress(), 0, _id, state, _device->getRLversion());
 }
 
 void Child::lightStateToLoRa(bool state)
@@ -446,14 +513,14 @@ void Child::lightStateToLoRa(bool state)
   DEBUGf("light state to lora %s\n=%d", _label, state);
   if (_dataType == V_BOOL)
   {
-    RLcomm.publishNum(_address, 0, _id, _sensorType, state, _device->getRLversion());
+    RLcomm.publishBool(_device->getAddress(), 0, _id, state, _device->getRLversion());
   }
   if (_dataType == V_RAW)
   {
     uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
     uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
     HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-    RLcomm.publishLight(_address, 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+    RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
   }
 }
 
@@ -463,7 +530,7 @@ void Child::lightBrightnessToLoRa(uint8_t brightness)
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
   HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-  RLcomm.publishLight(_address, 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
 }
 
 void Child::lightColorTemperature(uint16_t temperature)
@@ -472,7 +539,7 @@ void Child::lightColorTemperature(uint16_t temperature)
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
   HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-  RLcomm.publishLight(_address, 0, _id, state, brightness, temperature, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temperature, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
 }
 
 void Child::lightRGBColor(HALight::RGBColor color)
@@ -481,196 +548,20 @@ void Child::lightRGBColor(HALight::RGBColor color)
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
   uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
-  RLcomm.publishLight(_address, 0, _id, state, brightness, temp, color.red, color.green, color.blue, _device->getRLversion());
+  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, color.red, color.green, color.blue, _device->getRLversion());
 }
 
 void Child::coverToLoRa(HACover::CoverCommand cmd)
 {
   uint8_t pos = ((HACover*)_HAdevice)->getCurrentPosition();
-  RLcomm.publishCover(_address, 0, _id, (uint8_t)cmd, pos, _device->getRLversion());
+  RLcomm.publishCover(_device->getAddress(), 0, _id, (uint8_t)cmd, pos, _device->getRLversion());
 }
 
-void Child::doPacketV1ForHA(rl_packetV1_t p)
+void Child::inputnumberToLoRa(HANumeric number)
 {
-  // so old, not supported
-}
-
-void Child::doPacketV2ForHA(rl_packetV2_t p)
-{
-  byte sender = p.senderID;
-  byte child = p.childID;
-  DEBUGf("Do packet(V2) from %d / %d : %s ( %d)\n", sender, child, _HAuid, p.data.num.value);
-  rl_device_t st = (rl_device_t)((p.sensordataType >> 3) & 0x1F);
-  rl_data_t dt;
-  float fval;
-  String sval;
-  char tag[9] = {0};
-
-  switch ((int)st)
+  if (number.isSet())
   {
-    case SV2_BINARYSENSOR:
-      ((HABinarySensor*)_HAdevice)->setState(p.data.num.value > 0);
-      break;
-    case SV2_NUMERICSENSOR:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_FLOAT)
-      {
-        fval = p.data.num.value;
-        if (p.data.num.divider != 0)
-        {
-          fval = (float)p.data.num.value / (float)p.data.num.divider;
-        }
-        fval = fval * _coefA + _coefB;
-        if (fval >= _mini && fval <= _maxi)
-        {
-          ((HASensorNumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
-          ((HASensorNumber*)_HAdevice)->setValue(fval);
-        }
-      }
-      else
-      {
-        if (p.data.num.value >= _mini && p.data.num.value <= _maxi)
-        {
-          ((HASensorNumber*)_HAdevice)->setValue(p.data.num.value);
-        }
-      }
-      break;
-    case SV2_SWITCH:
-      ((HASwitch*)_HAdevice)->setState(p.data.num.value > 0);
-      break;
-    case SV2_LIGHT:
-      ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
-      break;
-    case SV2_COVER:
-      ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
-      break;
-    case SV2_FAN:
-      // TODO
-      break;
-    case SV2_HVAC:
-      // TODO
-      break;
-    case SV2_SELECT:
-      // TODO
-      break;
-    case SV2_TRIGGER:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      sval = String(p.data.num.value);
-      if (dt == V_TEXT)
-      {
-        sval = String(p.data.text);
-      }
-      ((HADeviceTrigger*)_HAdevice)->trigger(sval.c_str());
-      break;
-    case SV2_CUSTOM:
-      // TODO
-      break;
-    case SV2_TAG:
-      HAUtils::byteArrayToStr(tag, p.data.rawByte, 4);
-      ((HATagScanner*)_HAdevice)->tagScanned(tag);
-      break;
-    case SV2_TEXTSENSOR:
-      ((HASensor*)_HAdevice)->setValue(p.data.text);
-      break;
-  }
-}
-
-void Child::doPacketV3ForHA(rl_packetV3_t p)
-{
-  byte sender = p.senderID;
-  byte child = p.childID;
-  DEBUGf("Do packet from %d / %d : %s (%d)\n", sender, child, _HAuid, p.data.num.value);
-  rl_device_t st = (rl_device_t)((p.sensordataType >> 3) & 0x1F);
-  rl_data_t dt;
-  float fval;
-  String sval;
-  char tag[9] = {0};
-  switch ((int)st)
-  {
-    case S_BINARYSENSOR:
-      ((HABinarySensor*)_HAdevice)->setState(p.data.num.value > 0);
-      break;
-    case S_NUMERICSENSOR:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_FLOAT)
-      {
-        fval = p.data.num.value;
-        if (p.data.num.divider != 0)
-        {
-          fval = (float)p.data.num.value / (float)p.data.num.divider;
-        }
-        fval = fval * _coefA + _coefB;
-        if (fval >= _mini && fval <= _maxi)
-        {
-          ((HASensorNumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
-          ((HASensorNumber*)_HAdevice)->setValue(fval);
-        }
-      }
-      else
-      {
-        if (p.data.num.value >= _mini && p.data.num.value <= _maxi)
-        {
-          ((HASensorNumber*)_HAdevice)->setValue(p.data.num.value);
-        }
-      }
-      break;
-    case S_SWITCH:
-      ((HASwitch*)_HAdevice)->setState(p.data.num.value > 0);
-      break;
-    case S_LIGHT:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_BOOL)
-      {
-        ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
-      }
-      if (dt == V_RAW)
-      {
-        ((HALight*)_HAdevice)->setState(p.data.light.state);
-        ((HALight*)_HAdevice)->setBrightness(p.data.light.brightness);
-        ((HALight*)_HAdevice)->setColorTemperature(p.data.light.temperature);
-        ((HALight*)_HAdevice)->setRGBColor(HALight::RGBColor(p.data.light.red, p.data.light.green, p.data.light.blue) );
-      }
-      break;
-    case S_COVER:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_NUM)
-      {
-        ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
-      }
-      if (dt == V_RAW)
-      {
-        ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.cover.state);
-        ((HACover*)_HAdevice)->setPosition(p.data.cover.position);
-      }
-      break;
-    case S_FAN:
-      // TODO
-      break;
-    case S_HVAC:
-      // TODO
-      break;
-    case S_SELECT:
-      // TODO
-      break;
-    case S_TRIGGER:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      sval = String(p.data.num.value);
-      if (dt == V_TEXT)
-      {
-        sval = String(p.data.text);
-      }
-      ((HADeviceTrigger*)_HAdevice)->trigger(sval.c_str());
-      break;
-    case S_CUSTOM:
-      // TODO
-      break;
-    case S_TAG:
-      HAUtils::byteArrayToStr(tag, p.data.rawByte, 4);
-      ((HATagScanner*)_HAdevice)->tagScanned(tag);
-      break;
-    case S_TEXTSENSOR:
-      ((HASensor*)_HAdevice)->setValue(p.data.text);
-      break;
+    // TODO
   }
 }
 
@@ -685,7 +576,12 @@ void Child::doPacketForHA(rl_packet_t p)
   char tag[9] = {0};
   DEBUGf("Do packet from %d / %d : %s = %d (%02X)\n", sender, child, _HAuid, p.data.num.value, p.sensordataType);
 
-  switch ((int)st)
+  if (st != _sensorType) // TODO
+  {
+    DEBUGf("**ERR Different sensor type %d / %d\n", (int)st, (int)_sensorType);
+  }
+
+  switch ((int)_sensorType)
   {
     case S_BINARYSENSOR:
       DEBUGf("Binary Sensor : %d\n", (int)(p.data.num.value > 0));
@@ -755,6 +651,7 @@ void Child::doPacketForHA(rl_packet_t p)
       // TODO
       break;
     case S_TRIGGER:
+      DEBUGf("Trigger : %d\n", p.data.num.value);
       dt = (rl_data_t)(p.sensordataType & 0x07);
       sval = String(p.data.num.value);
       if (dt == V_TEXT)
@@ -772,6 +669,31 @@ void Child::doPacketForHA(rl_packet_t p)
       break;
     case S_TEXTSENSOR:
       ((HASensor*)_HAdevice)->setValue(p.data.text);
+      break;
+    case S_INPUTNUMBER:
+      DEBUGf("Input Number : %d\n", p.data.num.value);
+      dt = (rl_data_t)(p.sensordataType & 0x07);
+      if (dt == V_FLOAT)
+      {
+        fval = p.data.num.value;
+        if (p.data.num.divider != 0)
+        {
+          fval = (float)p.data.num.value / (float)p.data.num.divider;
+        }
+        fval = fval * _coefA + _coefB;
+        if (fval >= _mini && fval <= _maxi)
+        {
+          // TODO ((HANumber*)_HAdevice)->setPrecision(p.data.num.precision % 4); // %4 for precision 0 to 3
+          ((HANumber*)_HAdevice)->setState(fval);
+        }
+      }
+      else
+      {
+        if (p.data.num.value >= _mini && p.data.num.value <= _maxi)
+        {
+          ((HANumber*)_HAdevice)->setState(p.data.num.value);
+        }
+      }
       break;
   }
 }

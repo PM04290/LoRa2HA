@@ -4,13 +4,13 @@
 
   Wifi AP
     - default ssid : lora2ha
-    - default password : 012345678
+    - default password : 12345678
     - default address : 192.164.4.1 (lora2ha0.local)
 
-  TODO	
+  TODO
     Ajout carte LilyGO T-Internet POE
-    Exemple Somfy RTS : https://github.com/rstrouse/ESPSomfy-RTS
-	
+    Exemple Somfy RTS ? : https://github.com/rstrouse/ESPSomfy-RTS
+
 */
 #include <EEPROM.h>
 #include "FS.h"
@@ -51,7 +51,7 @@ typedef struct
 
 WiFiClient client;
 HADevice device;
-HAMqtt mqtt(client, device, 12); // 12 trigger MAX
+HAMqtt mqtt(client, device, 50); // 50 devices max
 
 uint32_t curtime, oldtime = 0;
 byte ntick = 0;
@@ -98,11 +98,9 @@ void onLoRaReceive(uint8_t len, rl_packet_t* p)
   if (p->destinationID == 0)
   {
     packetTable[idxWriteTable].packets.current = *p;
-    packetTable[idxWriteTable].version = 4;
+    packetTable[idxWriteTable].version = 1;
     packetTable[idxWriteTable].lqi = RLcomm.lqi();
     if (len == RL_PACKETV1_SIZE) packetTable[idxWriteTable].version = 1;
-    if (len == RL_PACKETV2_SIZE) packetTable[idxWriteTable].version = 2;
-    if (len == RL_PACKETV3_SIZE) packetTable[idxWriteTable].version = 3;
     idxWriteTable++;
     if (idxWriteTable >= MAX_PACKET)
     {
@@ -130,29 +128,65 @@ void processDevice()
     {
       notifyLogPacket(&p.packets.current, p.lqi);
     }
-	/* for ping testing
-    if (p.packets.current.senderID == 99)
-    {
-      RLcomm.publishNum(99, 0, 2, S_NUMERICSENSOR, p.lqi);
+    /* for ping test
+      if (p.packets.current.senderID == 99)
+      {
+      RLcomm.publishNum(99, 0, 2, p.lqi);
       delay(100);
       return;
-    }
-	*/
+      }
+    */
     Child* ch = hub.getChildById(p.packets.current.senderID, p.packets.current.childID);
     if (ch != nullptr)
     {
-      if (p.version == 1)
+      switch (p.version) {
+        case 1:
+          ch->doPacketForHA(p.packets.current);
+          break;
+        default:
+          ch->doPacketForHA(p.packets.current);
+          break;
+      }
+    } else {
+      if (p.packets.current.childID == 0xFF) // config child
       {
-        ch->doPacketV1ForHA(p.packets.v1);
-      } else if (p.version == 2)
-      {
-        ch->doPacketV2ForHA(p.packets.v2);
-      } else if (p.version == 3)
-      {
-        ch->doPacketV3ForHA(p.packets.v3);
-      } else
-      {
-        ch->doPacketForHA(p.packets.current);
+        Device* dev = hub.getDeviceById(p.packets.current.senderID);
+        //
+        uint8_t childID = p.packets.current.data.config.childID;
+        rl_device_t st = (rl_device_t)p.packets.current.data.config.deviceType;
+        rl_data_t dt = (rl_data_t)p.packets.current.data.config.dataType;
+        DEBUGf("Conf %d %d %d\n", childID, (int)st, (int)dt);
+        String js;
+        int d;
+        int c;
+        if (dev == nullptr)
+        {
+          d = hub.getNbDevice();
+          dev = hub.addDevice(new Device(p.packets.current.senderID, ""));
+          // new device address
+          // add blank device
+          docJson.clear();
+          docJson["cmd"] = "devnotify";
+          docJson["conf_child_" + String(d) + "_"] = getHTMLforDevice(d, dev);
+          js = "";
+          serializeJson(docJson, js);
+          ws.textAll(js);
+        }
+        d = hub.getIdxDeviceByAddress(p.packets.current.senderID);
+        Child* chd = dev->getChildById(childID);
+        if (chd == nullptr)
+        {
+          c = dev->getNbChild();
+          chd = new Child(dev, childID, "", st, dt, "", CategoryAuto, "");
+          dev->addChild(chd);
+          // add blank child
+          docJson.clear();
+          docJson["cmd"] = "childnotify";
+          docJson["conf_child_" + String(d) + "_" + String(c)] = getHTMLforChild(d, c, chd);
+          js = "";
+          serializeJson(docJson, js);
+          ws.textAll(js);
+        }
       }
     }
   }
@@ -196,7 +230,7 @@ void setup()
       UIDcode = code - '0';
       AP_ssid[7] = code;
       RadioFreq = EEPROM.readUShort(1);
-      if (RadioFreq == 0xFFFF) RadioFreq = 435;
+      if (RadioFreq == 0xFFFF) RadioFreq = 433;
       strcpy(Wifi_ssid, EEPROM.readString(EEPROM_TEXT_OFFSET).c_str());
       strcpy(Wifi_pass, EEPROM.readString(EEPROM_TEXT_OFFSET + EEPROM_TEXT_SIZE * 1).c_str());
       strcpy(mqtt_host, EEPROM.readString(EEPROM_TEXT_OFFSET + EEPROM_TEXT_SIZE * 2).c_str());
@@ -320,8 +354,8 @@ bool loadConfig()
     {
       uint8_t address = deviceItem["address"].as<int>();
       const char* name = deviceItem["name"].as<const char*>();
-      DEBUGf("@ %d : %s\n", address, name);
       uint8_t rlversion = deviceItem["rlversion"].as<int>();
+      DEBUGf("@ %d : %s\n", address, name);
       if ((address > 0) && (dev = hub.addDevice(new Device(address, name, rlversion))))
       {
         // walk child array
@@ -330,7 +364,7 @@ bool loadConfig()
         {
           for (JsonVariant childItem : childs.as<JsonArray>())
           {
-            uint8_t id = childItem["id"];
+            uint8_t childID = childItem["id"];
             const char* lbl = childItem["label"].as<const char*>();
             rl_device_t st = (rl_device_t)childItem["sensortype"].as<int>();
             rl_data_t dt = (rl_data_t)childItem["datatype"].as<int>();
@@ -343,7 +377,10 @@ bool loadConfig()
               maxi = childItem["max"].as<int>();
             float coefA = childItem["coefa"] | (float)1.0;
             float coefB = childItem["coefb"] | (float)0.0;
-            dev->addChild(new Child(dev, address, id, lbl, st, dt, childItem["class"].as<const char*>(), childItem["unit"].as<const char*>(), expire, mini, maxi, coefA, coefB));
+            EntityCategory ec = EntityCategory::CategoryAuto;
+            if (childItem["category"].is<int>())
+              ec = (EntityCategory)childItem["category"].as<int>();
+            dev->addChild(new Child(dev, childID, lbl, st, dt, childItem["class"].as<const char*>(), ec, childItem["unit"].as<const char*>(), expire, mini, maxi, coefA, coefB));
           }
         }
       }

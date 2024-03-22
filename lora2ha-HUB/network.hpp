@@ -2,6 +2,7 @@
 #include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
+
 #ifdef USE_ETHERNET
 #include <ETH.h>
 static bool eth_connected = false;
@@ -188,18 +189,20 @@ String getHTMLforDevice(uint8_t d, Device* dev)
   if (dev != nullptr)
   {
     blocD.replace("%CNFADDRESS%", String(dev->getAddress()));
-    blocD.replace("%CNFNAME%",  dev->getName());
+    blocD.replace("%CNFNAME%", String(dev->getName()));
+    blocD.replace("%CNFNAMEVALID%",  strlen(dev->getName()) == 0 ? "aria-invalid='true'" : String(dev->getName()));
     blocD.replace("%CNFRLVERSION%",  String(dev->getRLversion()));
     //
     for (int c = 0; c < dev->getNbChild(); c++)
     {
-      replaceGen += "<div id='conf_child_" + String(d) + "_" + String(c) + "' class='row'>chargement...</div>\n";
+      replaceGen += "<div id='conf_child_" + String(d) + "_" + String(c) + "' class='row'>Loading...</div>\n";
     }
   } else {
     blocD.replace("%CNFADDRESS%", "");
     blocD.replace("%CNFNAME%",  "");
+    blocD.replace("%CNFNAMEVALID%",  "aria-invalid='true'");
     blocD.replace("%CNFRLVERSION%",  "0");
-    replaceGen += "<div id='conf_child_" + String(d) + "_0' class='row'>chargement...</div>\n";
+    replaceGen += "<div id='conf_child_" + String(d) + "_0' class='row'>Loading...</div>\n";
   }
   //
   blocD.replace("%GENCHILDS%", replaceGen);
@@ -210,17 +213,13 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
 {
   String blocC = html_child;
   String kcnf;
-  blocC.replace("%TITLEC_ID%", c ? "" : "ID");
-  blocC.replace("%TITLEC_NAME%", c ? "" : "Label");
-  blocC.replace("%TITLEC_DATA%", c ? "" : "Data");
-  blocC.replace("%TITLEC_HA%", c ? "" : "HA configuration");
-
   blocC.replace("#D#", String(d));
   blocC.replace("#C#", String(c));
   if (ch != nullptr)
   {
     blocC.replace("%CNFC_ID%", String(ch->getId()));
     blocC.replace("%CNFC_LABEL%", String(ch->getLabel()));
+    blocC.replace("%CNFC_LABELVALID%", strlen(ch->getLabel()) == 0 ? "aria-invalid='true'" : String(ch->getLabel()));
     for (int n = 0; n <= 5; n++) {
       kcnf = "%CNFC_D" + String(n) + "%";
       blocC.replace(kcnf, (int)ch->getDataType() == n ? "selected" : "");
@@ -231,6 +230,7 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     if ((int)ch->getSensorType() == 1)
     {
       blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
+      blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
       blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
       blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
       blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
@@ -240,6 +240,7 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     } else
     {
       blocC.replace("%CNFC_CLASS%", "");
+      blocC.replace("%CNFC_CATEGORY%", "");
       blocC.replace("%CNFC_UNIT%", "");
       blocC.replace("%CNFC_EXPIRE%", "");
       blocC.replace("%CNFC_MINI%", "");
@@ -251,6 +252,7 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
   {
     blocC.replace("%CNFC_ID%", "1");
     blocC.replace("%CNFC_LABEL%", "");
+    blocC.replace("%CNFC_LABELVALID%", "aria-invalid='true'");
     for (int n = 0; n <= 5; n++) {
       kcnf = "%CNFC_D" + String(n) + "%";
       blocC.replace(kcnf, "");
@@ -435,7 +437,7 @@ void onIndexRequest(AsyncWebServerRequest *request)
 void onConfigRequest(AsyncWebServerRequest * request)
 {
   DEBUGln("web set config");
-  /*
+  /* to debug
     for (int i = 0; i < request->params(); i++)
     {
     AsyncWebParameter* p = request->getParam(i);
@@ -450,61 +452,54 @@ void onConfigRequest(AsyncWebServerRequest * request)
     for (int i = 0; i < params; i++)
     {
       AsyncWebParameter* p = request->getParam(i);
-      if (p->isPost() && p->name() != "cnf")
-      {
-        //DEBUGf("_POST[%s]: %s\n", p->name().c_str(), p->value().c_str());
-        String str = p->name();
-        if (str == "uniqueid") {
-          Jconfig["uniqueid"] = p->value();
-        } else if (str == "version_major") {
-          Jconfig["version_major"] = p->value();
-        } else if (str == "version_minor") {
-          Jconfig["version_minor"] = p->value();
-        } else {
-          // exemple : devices_0_name
-          //      or : devices_1_childs_2_label
-          String valdev = getValue(str, '_', 0);
-          String keydev = getValue(str, '_', 1);
-          String attrdev = getValue(str, '_', 2);
-          String keychild = getValue(str, '_', 3);
-          String attrchild = getValue(str, '_', 4);
-          String sval(p->value().c_str());
+      String str = p->name();
+      // exemple : dev_0_address
+      //      or : dev_1_child_2_label
+      String valdev = getValue(str, '_', 0);
+      String keydev = getValue(str, '_', 1);
+      String attrdev = getValue(str, '_', 2);
+      String keychild = getValue(str, '_', 3);
+      String attrchild = getValue(str, '_', 4);
+      String sval(p->value().c_str());
 
-          DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev.c_str(), keydev.c_str(), attrdev.c_str(), keychild.c_str(), attrchild.c_str(), sval.c_str());
-          if (keychild == "")
+      DEBUGf("[%s][%s][%s][%s][%s] = %s\n", valdev.c_str(), keydev.c_str(), attrdev.c_str(), keychild.c_str(), attrchild.c_str(), sval.c_str());
+      if (keychild == "")
+      {
+        // on laisse Name vide pour supprimer un Device
+        if (request->getParam(valdev + "_" + keydev + "_name", true)->value() != "")
+        {
+          if (isValidNumber(sval))
           {
-            if (isValidNumber(sval))
-            {
-              Jconfig[valdev][keydev.toInt()][attrdev] = sval.toInt();
-            } else
-            {
-              Jconfig[valdev][keydev.toInt()][attrdev] = sval;
-            }
+            Jconfig[valdev][keydev.toInt()][attrdev] = sval.toInt();
           } else
           {
-            // on laisse le Label vide pour supprimer une ligne
-            if (request->getParam(valdev + "_" + keydev + "_" + attrdev + "_"  + keychild + "_label", true)->value() != "")
-            {
-              if (isValidNumber(sval))
-              {
-                Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toInt();
-              } else
-              {
-                Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval;
-              }
-            }
+            Jconfig[valdev][keydev.toInt()][attrdev] = sval;
+          }
+        }
+      } else
+      {
+        // on laisse Label vide pour supprimer un Child
+        if (request->getParam(valdev + "_" + keydev + "_" + attrdev + "_"  + keychild + "_label", true)->value() != "")
+        {
+          if (isValidNumber(sval))
+          {
+            Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toInt();
+          } else
+          {
+            Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval;
           }
         }
       }
     }
+    /*
     // nettoyage des pages vides
-    for (JsonArray::iterator it = Jconfig["devices"].as<JsonArray>().begin(); it != Jconfig["devices"].as<JsonArray>().end(); ++it)
+    for (JsonArray::iterator it = Jconfig["dev"].as<JsonArray>().begin(); it != Jconfig["dev"].as<JsonArray>().end(); ++it)
     {
       if (!(*it).containsKey("childs"))
       {
-        Jconfig["devices"].as<JsonArray>().remove(it);
+        Jconfig["dev"].as<JsonArray>().remove(it);
       }
-    }
+    }*/
     //
     Jconfig["end"] = true;
     String Jres;

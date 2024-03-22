@@ -8,15 +8,21 @@ const char html_device[] PROGMEM = R"rawliteral(
   </label>
   <label class="col-lg-3">
     Name
-    <input type="text" name="dev_#D#_name" value="%CNFNAME%">
+    <input type="text" name="dev_#D#_name" value="%CNFNAME%" %CNFNAMEVALID% >
   </label>
   <label class="col-lg-1">
     RL ver
     <input type="number" min="0" max="4" name="dev_#D#_rlversion" value="%CNFRLVERSION%">
   </label>
 </div>
+<div class="row">
+  <label class="offset-1 col-1">ID</label>
+  <label class="col-2">Label</label>
+  <label class="col-2">Data</label>
+  <label class="col-5">HA configuration</label>
+</div>
 %GENCHILDS%
-<footer>
+<footer id="footer_%DEVCOUNT%">
   <span class="offset-10 col-2 row">
   <button type="button" class="primary" id="newchild_#D#" onclick="addchild(this)">Add child</button>
   </span>
@@ -26,15 +32,12 @@ const char html_device[] PROGMEM = R"rawliteral(
 
 const char html_child[] PROGMEM = R"rawliteral(
   <label class="offset-1 col-1">
-    %TITLEC_ID%
     <input type="number" name="dev_#D#_childs_#C#_id" min="0" max="60" value="%CNFC_ID%">
   </label>
   <label class="col-2">
-    %TITLEC_NAME%
-    <input type="text" name="dev_#D#_childs_#C#_label" value="%CNFC_LABEL%">
+    <input type="text" name="dev_#D#_childs_#C#_label" value="%CNFC_LABEL%" %CNFC_LABELVALID% >
   </label>
   <label class="col-2">
-    %TITLEC_DATA%
     <select name="dev_#D#_childs_#C#_datatype" required>
         <option value="0" %CNFC_D0%>Boolean</option>
         <option value="1" %CNFC_D1%>Int</option>
@@ -45,9 +48,9 @@ const char html_child[] PROGMEM = R"rawliteral(
     </select>
   </label>
   <label class="col-5">
-    %TITLEC_HA%
     <input type="hidden" name="dev_#D#_childs_#C#_sensortype" value="%CNFC_STYPE_INT%">
     <input type="hidden" name="dev_#D#_childs_#C#_class" value="%CNFC_CLASS%">
+    <input type="hidden" name="dev_#D#_childs_#C#_category" value="%CNFC_CATEGORY%">
     <input type="hidden" name="dev_#D#_childs_#C#_unit" value="%CNFC_UNIT%">
     <input type="hidden" name="dev_#D#_childs_#C#_expire" value="%CNFC_EXPIRE%">
     <input type="hidden" name="dev_#D#_childs_#C#_min" value="%CNFC_MINI%">

@@ -8,10 +8,6 @@
   IO1 : ANA1 or D1
   IO2 : ANA7 or D7
 
-  PMos load switch :
-  https://blog.mbedded.ninja/electronics/circuit-design/load-switches/
-  https://wolles-elektronikkiste.de/en/the-mosfet-as-switch
-
 */
 
 // ATMEL AVR ATTINY84
@@ -29,7 +25,6 @@
 
 #include <Arduino.h>
 #include <RadioLink.h>
-#include "avr/power.h"
 #include "avr/sleep.h"
 #include "avr/wdt.h"
 
@@ -46,13 +41,20 @@
 #define PIN_IO_1        1
 #define PIN_IO_2        7
 
-//--- VL33 Driver (for LoRa module) ---
+//--- VL33 Driver (for LoRa module & IO) ---
 #define PIN_VL33_DRV    9
 #define DRVON           1
 #define DRVOFF          0
 
-//--- tools ---
-//#define DEBUG_LED
+//--- Different define for compilation
+#define T_TMP36  0x80
+#define T_LM35   0x81
+#define W_HX711  0x82
+#define D_PULSE  0x83
+
+
+//--- debug tools ---
+#define DEBUG_LED
 
 #ifdef DEBUG_LED
 #define PIN_DEBUG_LED  10
@@ -79,60 +81,84 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 #define DEBUGln(x)
 #endif
 
+//############################
+//## Equipment dictionnary ###
+//############################
+
 // uncomment #define below according the hardware
 
-//#define WITH_BINARY1       PIN_IO_0
-//#define WITH_BINARY2       PIN_IO_1
-#define WITH_BINARY3       PIN_IO_2
+//#define WITH_BINARY_0       PIN_IO_0  //              Switch on IO0
+//#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
+#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
 
-//#define WITH_DALLAS        PIN_IO_0  // only on IO_0
+//#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
+//#define WITH_TEMP_0         T_TMP36   //  > 1 of 3    TMP36 on IO0
+//#define WITH_TEMP_0         T_LM35    // /            LM35 on IO0
+//#define WITH_TEMP_1         PIN_IO_1  //              Thermistor on IO1
+//#define WITH_TEMP_2         PIN_IO_2  //              Thermistor on IO0
 
-//#define WITH_THERMISTOR    PIN_IO_0
-//#define WITH_THERMISTOR    PIN_IO_1
-//#define WITH_THERMISTOR    PIN_IO_2
+//#define WITH_PHOTO_0        PIN_IO_0  //
+//#define WITH_PHOTO_1        PIN_IO_1  //
+//#define WITH_PHOTO_2        PIN_IO_2  //
 
-//#define WITH_PHOTORESISTOR PIN_IO_0
-//#define WITH_PHOTORESISTOR PIN_IO_1
-//#define WITH_PHOTORESISTOR PIN_IO_2
+//#define WITH_WEIGHT_0       PIN_IO_0  //              ampli-op on IO0 (analog read)
+//#define WITH_WEIGHT_1       PIN_IO_1  //              ampli-op on IO1 (analog read)
+//#define WITH_WEIGHT_2       PIN_IO_2  // \ 1 of 2     ampli-op on IO2 (analog read)
+//#define WITH_WEIGHT_2       W_HX711   // /            implicit use IO_1 (SCK) and IO_2 (DT)
+
+//#define WITH_DISTANCE       D_PULSE   //              implicit use IO_1 (pulse) and IO_2 (echo)
 
 // sleep mode cofiguration if IO interrupt wake up
 // according with WITH_BINARYn upper
-// only binary sensor FALL to GND event
+// wake up on any change of IO (FALL, RISE)
 //#define WAKEUP_ON_IO0
 //#define WAKEUP_ON_IO1
 #define WAKEUP_ON_IO2
 
-#ifdef WITH_DALLAS
-#include <OneWire.h>
-#include <DallasTemperature.h>
-#endif
 
 // RadioLink IDs
 #define HUB_UID         0  // Gateway UID Code
 #define SENSOR_ID      50  // Device @
-#define CHILD_PARAM     0  // For future
 #define CHILD_ID_VBAT   1  // Vbat : ID 1
 #define CHILD_ID_INPUT1 2  // IO0  : ID 2
 #define CHILD_ID_INPUT2 3  // IO1  : ID 3
 #define CHILD_ID_INPUT3 4  // IO2  : ID 4
+#define CHILD_PARAM  0xFF  // Sending config
 
 RadioLinkClass RLcomm;
+bool LoraOK = false;
 
-#ifdef WITH_DALLAS
-OneWire oneWire(PIN_IO_0);             // Verify compatible hardware for IO0 input
-DallasTemperature sensor0(&oneWire);
+#include "MLsensor.hpp"
+uint16_t mVCC = 3700; // 3.7v
+
+#include "vcc.hpp"
+
+#if defined(WITH_BINARY_0) || defined(WITH_BINARY_1) || defined(WITH_BINARY_2)
+#include "binary.hpp"
 #endif
 
-bool LoraOK = false;
-bool DallasOK = false;
+#if defined(WITH_TEMP_0) || defined(WITH_TEMP_1) ||defined(WITH_TEMP_2)
+#include "temperature.hpp"
+#endif
+
+#if defined(WITH_PHOTO_0) || defined(WITH_PHOTO_1) ||defined(WITH_PHOTO_2)
+#include "photoresistor.hpp"
+#endif
+
+#if defined(WITH_WEIGHT_0) || defined(WITH_WEIGHT_1) || defined(WITH_WEIGHT_2)
+#include "weight.hpp"
+#endif
+
+#if WITH_DISTANCE == D_PULSE
+#include "ultrasonic.hpp"
+#endif
+
 
 // interrupts
 uint16_t WDTcount = 0;
 
 // LoRa frequency
-const uint32_t LRfreq = 435;
-
-uint16_t mVCC = 3700; // 3.7v
+const uint32_t LRfreq = 433;
 
 ISR(WDT_vect)
 {
@@ -150,7 +176,6 @@ void setup()
 {
   LED_INIT;
   LED_ON;
-
   DEBUGinit();
 
   pinMode(PIN_IO_0, INPUT_PULLUP);
@@ -162,34 +187,92 @@ void setup()
   digitalWrite(PIN_VL33_DRV, DRVON);
   delay(100);
 
-  DEBUGln("\nStart");
+  DEBUGln("\nStart, V33 On");
 
   if (startLoRa())
   {
     delay(100);
   }
-  LED_OFF
-  delay(500);
+  LED_OFF;
 
-#ifdef WITH_DALLAS
-  sensor0.begin();
-  DallasOK = sensor0.getDeviceCount() > 0;
-  if (DallasOK)
-  {
-    DEBUG("Dallas OK");
-    // ok
-  } else
-  {
-    DEBUG("Dallas Error");
-    for (byte b = 0; b < 3; b++)
-    {
-      LED_ON;
-      delay(50);
-      LED_OFF;
-      delay(50);
-    }
-  }
+  // Declare any sensor in module
+  ML_addSensor(new VCC(CHILD_ID_VBAT));
+
+#ifdef WITH_BINARY_0
+#ifdef WAKEUP_ON_IO0
+  ML_addSensor(new BinaryIO(WITH_BINARY_0, CHILD_ID_INPUT1, true));  // Trigger
+#else
+  ML_addSensor(new BinaryIO(WITH_BINARY_0, CHILD_ID_INPUT1));        // Binary sensor
 #endif
+#endif
+
+#ifdef WITH_BINARY_1
+#ifdef WAKEUP_ON_IO1
+  ML_addSensor(new BinaryIO(WITH_BINARY_1, CHILD_ID_INPUT2, true));
+#else
+  ML_addSensor(new BinaryIO(WITH_BINARY_1, CHILD_ID_INPUT2));
+#endif
+#endif
+
+#ifdef WITH_BINARY_2
+#ifdef WAKEUP_ON_IO2
+  ML_addSensor(new BinaryIO(WITH_BINARY_2, CHILD_ID_INPUT3, true));
+#else
+  ML_addSensor(new BinaryIO(WITH_BINARY_2, CHILD_ID_INPUT3));
+#endif
+#endif
+
+#ifdef WITH_TEMP_0
+#if WITH_TEMP_0 == PIN_IO_0
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, PIN_IO_0));
+#endif
+#if WITH_TEMP_0 == TMP36
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, TEMP_TMP36));
+#endif
+#if WITH_TEMP_0 == LM35
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, TEMP_LM35));
+#endif
+#endif
+
+#ifdef WITH_TEMP_1
+  ML_addSensor(new Temperature(CHILD_ID_INPUT2, WITH_TEMP_1));
+#endif
+
+#ifdef WITH_TEMP_2
+  ML_addSensor(new Temperature(CHILD_ID_INPUT3, WITH_TEMP_2));
+#endif
+
+#ifdef WITH_PHOTO_0
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT1, WITH_PHOTO_0));
+#endif
+
+#ifdef WITH_PHOTO_1
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT2, WITH_PHOTO_1));
+#endif
+
+#ifdef WITH_PHOTO_2
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT3, WITH_PHOTO_2));
+#endif
+
+#ifdef WITH_WEIGHT_0
+  ML_addSensor(new Weight(CHILD_ID_INPUT1, WITH_WEIGHT_0));
+#endif
+
+#ifdef WITH_WEIGHT_1
+  ML_addSensor(new Weight(CHILD_ID_INPUT2, WITH_WEIGHT_1));
+#endif
+
+#ifdef WITH_WEIGHT_2
+  ML_addSensor(new Weight(CHILD_ID_INPUT3, WITH_WEIGHT_2));
+#endif
+
+#if WITH_DISTANCE == D_PULSE
+  ML_addSensor(new Ultrasonic(CHILD_ID_INPUT3));
+#endif
+
+  ML_begin();
+  // publish all sensors configuration (only for LoRa HUB)
+  ML_PublishConfigSensors();
 }
 
 void loop()
@@ -209,116 +292,29 @@ bool startLoRa()
   } else
   {
     DEBUGln("LoRa Error");
+#ifdef DEBUG_LED
     // To show LoRa error on H1 LED
     for (byte b = 0; b < 3; b++)
     {
-      LED_OFF;
-      delay(100);
-      LED_ON;
-      delay(100);
+      LED_OFF; delay(100); LED_ON; delay(100);
     }
+#endif
   }
   return false;
 }
 
 void sendData()
 {
-  static uint16_t oldvBat = 0;
-  static int16_t oldTemp = -2000;
-  static int16_t oldLux = 0;
-  static uint8_t oldBinary0 = 0xFF;
-  static uint8_t oldBinary1 = 0xFF;
-  static uint8_t oldBinary2 = 0xFF;
   if (LoraOK)
   {
-    DEBUGln("Send data");
-    // VCC
-    mVCC = readVcc();
-    if (mVCC != oldvBat)
-    {
-      oldvBat = mVCC;
-      DEBUGln(" > VCC");
-      RLcomm.publishFloat(HUB_UID, SENSOR_ID, CHILD_ID_VBAT, S_NUMERICSENSOR, mVCC, 1000, 1);
-    }
-
-#ifdef WITH_THERMISTOR
-    // Send Thermistor sensor (analog sensor) from IO_0
-    uint16_t ADCtemperature = analogRead(WITH_THERMISTOR);
-    int16_t valTemp = calcTemperature(ADCtemperature) * 10.0; // 1/10°
-    if (abs(valTemp - oldTemp) > 3)
-    {
-      oldTemp = valTemp;
-      int chidID = WITH_THERMISTOR == PIN_IO_0 ? CHILD_ID_INPUT1 : WITH_THERMISTOR == PIN_IO_1 ? CHILD_ID_INPUT2 : CHILD_ID_INPUT3;
-      DEBUGln(" > Therm");
-      RLcomm.publishFloat(HUB_UID, SENSOR_ID, chidID, S_NUMERICSENSOR, valTemp, 10, 1);
-    }
-#endif
-
-#ifdef WITH_DALLAS
-    // Send Dallas sensor, from IO_0
-    if (DallasOK)
-    {
-      sensor0.begin();
-      sensor0.requestTemperatures();
-      int16_t tDallas = sensor0.getTempCByIndex(0) * 10;
-      if (abs(tDallas - oldTemp) > 3)
-      {
-        oldTemp = tDallas;
-        DEBUGln(" > Dallas");
-        RLcomm.publishFloat(HUB_UID, SENSOR_ID, CHILD_ID_INPUT1, S_NUMERICSENSOR, tDallas, 10, 1);
-      }
-    }
-#endif
-
-#ifdef WITH_PHOTORESISTOR
-    uint16_t valLux = ADCtoLux(analogRead(WITH_PHOTORESISTOR));
-    if (abs(valLux - oldLux) > 10)
-    {
-      oldLux = valLux;
-      int chidID = WITH_PHOTORESISTOR == PIN_IO_0 ? CHILD_ID_INPUT1 : WITH_PHOTORESISTOR == PIN_IO_1 ? CHILD_ID_INPUT2 : CHILD_ID_INPUT3;
-      DEBUGln(" > Photo");
-      RLcomm.publishNum(HUB_UID, SENSOR_ID, chidID, S_NUMERICSENSOR, valLux);
-    }
-#endif
-
-#ifdef WITH_BINARY1
-    // Send digital sensor IO_0
-    uint8_t sBinary0 = digitalRead(WITH_BINARY1);
-    if (sBinary0 != oldBinary0)
-    {
-      oldBinary0 = sBinary0;
-      DEBUGln(" > Bin1");
-      RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT1, S_BINARYSENSOR, !sBinary0);
-    }
-#endif
-
-#ifdef WITH_BINARY2
-    // Send digital sensor IO_1
-    uint8_t sBinary1 = digitalRead(WITH_BINARY2);
-    if (sBinary1 != oldBinary1)
-    {
-      oldBinary1 = sBinary1;
-      DEBUGln(" > Bin2");
-      RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT2, S_BINARYSENSOR, !sBinary1);
-    }
-#endif
-
-#ifdef WITH_BINARY3
-    // Send digital sensor IO_2
-    uint8_t sBinary2 = digitalRead(WITH_BINARY3);
-    if (sBinary2 != oldBinary2)
-    {
-      oldBinary2 = sBinary2;
-      DEBUGln(" > Bin3");
-      RLcomm.publishNum(HUB_UID, SENSOR_ID, CHILD_ID_INPUT3, S_BINARYSENSOR, !sBinary2);
-    }
-#endif
-  } else
-  {
     LED_ON;
-    delay(50);
-    LED_OFF;
+    DEBUGln("Send data");
+    // Walk any sensor in Module to send data
+    ML_SendSensors();
+  } else { // if LoRaOK
+    LED_ON; delay(30);
   }
+  LED_OFF;
 }
 
 // Power Off driver : Watchdog timing and IO Interrupt
@@ -331,22 +327,22 @@ void powerOff()
   ADCSRA &= ~(1 << ADEN); // Disable ADC
 
 #if defined(WAKEUP_ON_IO0) || defined(WAKEUP_ON_IO1) || defined(WAKEUP_ON_IO2)
-  GIMSK |= bit(PCIE0);      // Enable Pin Change Interrupts PCINT7..0
+  GIMSK |= _BV(PCIE0);      // Enable Pin Change Interrupts PCINT7..0
 
 #if defined(WAKEUP_ON_IO0)
-  PCMSK0 |= bit(PCINT0);    // Use IO0 as interrupt pin
+  PCMSK0 |= _BV(PCINT0);    // Use IO0 as interrupt pin
 #endif
 #if defined(WAKEUP_ON_IO1)
-  PCMSK0 |= bit(PCINT1);    // Use IO1 as interrupt pin
+  PCMSK0 |= _BV(PCINT1);    // Use IO1 as interrupt pin
 #endif
 #if defined(WAKEUP_ON_IO2)
-  PCMSK0 |= bit(PCINT7);    // Use IO2 as interrupt pin
+  PCMSK0 |= _BV(PCINT7);    // Use IO2 as interrupt pin
 #endif
 
 #endif
   //
-  sleep_enable();
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  sleep_enable();
 
   // Set the watchdog to wake us up and turn on its interrupt
   wdt_enable(WDTO_4S);
@@ -377,96 +373,4 @@ void powerOff()
   delay(20);
 
   startLoRa();
-}
-
-// Thermistor calculation
-#ifdef WITH_THERMISTOR
-#define B           3100   // coef beta
-#define RESISTOR    4700   // reference resistor
-#define THERMISTOR  5000   // thermistor value
-#define NOMINAL     298.15 // nominal temperature (Kelvin) (25°)
-// coef calculator if unknown : https://www.thinksrs.com/downloads/programs/Therm%20Calc/NTCCalibrator/NTCcalculator.htm
-float calcTemperature(int adcTemp)
-{
-  float vcc = float(mVCC) / 1000.;
-
-  // if ntc on GND
-  float ntcVoltage = ((float)adcTemp * vcc) / 1023.;
-  float ntcResistance = (ntcVoltage) * RESISTOR / (vcc - ntcVoltage);
-
-  // if ntc on VCC
-  // float ntcResistance = RESISTOR * (1023. / adcTemp - 1.);
-
-  float kelvin = (B * NOMINAL) / (B + (NOMINAL * log(ntcResistance / THERMISTOR)));
-  float celcius = kelvin - 273.15;
-  return celcius;
-}
-#endif
-
-// Measure lux with Photoresistor
-#ifdef WITH_PHOTORESISTOR
-#define REF_RESISTANCE      100000
-#define L1 2000      // forte lumière
-#define R1 100000
-#define L2 10        // faible lumière
-#define R2 20000000
-
-float coef_m = NAN;
-float coef_b = NAN;
-uint32_t ADCtoLux(int ldrRaw)
-{
-  if (isnan(coef_m)) {
-    coef_m = (log10(L2) - log10(L1)) / (log10(R2) - log10(R1));
-    coef_b =  log10(L1) - (coef_m * log10(R1));
-  }
-  float vcc = float(mVCC) / 1000.;
-
-  // for LDR on VCC
-  //float cRvoltage = ((float)ldrRaw * vcc) / 1023.;
-  //float ldrResistance = (vcc - cRvoltage) * REF_RESISTANCE / cRvoltage;
-
-  // for LDR on GND
-  float ldrVoltage = ((float)ldrRaw * vcc) / 1023.;
-  float ldrResistance = (ldrVoltage) * REF_RESISTANCE / (vcc - ldrVoltage);
-
-  float lux = kalman( pow(10, coef_b) * pow(ldrResistance, coef_m) );
-  return lux;
-}
-#endif
-
-// for kalman
-float q = 0.03;
-float kalman_gain = 0;
-float err_measure = 1;
-float err_estimate = 2;
-float current_estimate = 0;
-float last_estimate = 0;
-float kalman(float newVal)
-{
-  kalman_gain = err_estimate / (err_estimate + err_measure);
-  current_estimate = last_estimate + kalman_gain * (newVal - last_estimate);
-  err_estimate =  (1.0f - kalman_gain) * err_estimate + fabsf(last_estimate - current_estimate) * q;
-  last_estimate = current_estimate;
-  return current_estimate;
-}
-
-// Measure internal VCC
-long readVcc() {
-  long result;
-  // Read 1.1V reference against AVcc
-  // set the reference to Vcc and the measurement to the internal 1.1V reference
-#if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
-  ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-#elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-  ADMUX = _BV(MUX5) | _BV(MUX0) ;
-#else
-  ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
-#endif
-  delay(2); // Wait for Vref to settle
-  ADCSRA |= _BV(ADSC); // Convert
-  while (bit_is_set(ADCSRA, ADSC));
-  result = ADCL;
-  result |= ADCH << 8;
-  result = 1126400L / result; // Back-calculate AVcc in mV
-  return result;
 }

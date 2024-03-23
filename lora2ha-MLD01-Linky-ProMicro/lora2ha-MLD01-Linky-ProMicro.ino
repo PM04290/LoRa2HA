@@ -6,6 +6,8 @@
 */
 #include <TeleInfo.h>
 
+//#define DEBUG_SERIAL
+
 #ifdef DEBUG_SERIAL
 #define DEBUGinit() Serial.begin(115200)
 #define DEBUG(x) Serial.print(x)
@@ -46,7 +48,7 @@ RadioLinkClass RLcomm;
 
 TeleInfo teleinfo(&Serial1);
 
-#define TRIPHASE
+//#define TRIPHASE
 
 #define AVGSIZE 5
 long arrPower[AVGSIZE];
@@ -58,7 +60,7 @@ uint32_t Time1s = 0;
 uint32_t ConsoTime;
 const char oldTarif[10] = {0};
 
-uint8_t waitForConfig = 3; // 3 frame to analyze data and send config
+uint8_t waitForConfig = 2; // 2 frames to analyze data and send config
 
 void setup()
 {
@@ -114,12 +116,11 @@ void loop()
 #endif
 
     DEBUGln(F("--- tele info available ---"));
-    DEBUG(F("Option Tarifaire = "));
+    DEBUG(F("OPTARIF = "));
     DEBUGln(opTarif);
 
     if (waitForConfig == 0)
     {
-
       if (strcmp(opTarif, oldTarif) != 0)
       {
         // Send new Tarif if change
@@ -165,7 +166,7 @@ void loop()
             RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT2, Iinst2);
             RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT3, Iinst3);
 #else
-            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, Iinst);
+            RLcomm.publishNum(HUB_ID, SENSOR_ID, CHILD_IISNT1, Iinst1);
 #endif
           }
         }

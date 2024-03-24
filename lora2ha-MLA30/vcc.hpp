@@ -10,13 +10,13 @@ class VCC : public MLsensor
     }
     void begin() override {
     }
-    virtual uint32_t Send()
+    uint32_t Send(int delta = 5) override
     {
       mVCC = readVcc();
-      if (mVCC != oldvBat)
+      if (abs(mVCC - oldvBat) > delta)
       {
         oldvBat = mVCC;
-        DEBUGln(F(" > VCC"));
+        DEBUG(F(" >Vcc")); DEBUGln(mVCC);
         publishFloat(mVCC, 1000, 1);
       }
       return mVCC;

@@ -3,6 +3,9 @@ class WeightAnalog
   public:
     explicit WeightAnalog(uint8_t adc_pin) {
       adc_pin_ = adc_pin;
+      if (_pin <= PIN_IO_2) {
+        pinMode(adc_pin_, INPUT);
+      }
     }
     void begin() {
     }

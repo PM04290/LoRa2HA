@@ -37,7 +37,7 @@ class Weight : public MLsensor {
       if ((weight > 0) && (abs(weight - _oldWeight) > delta))
       {
         _oldWeight = weight;
-        DEBUGln(" > Weight");
+        DEBUG(F(" >Weight")); DEBUGln(weight);
         publishFloat(weight, 1000, 1);
         return weight;
       }

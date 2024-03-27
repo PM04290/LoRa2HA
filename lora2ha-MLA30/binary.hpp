@@ -27,7 +27,7 @@ class BinaryIO : public MLsensor
       if (_curState != _oldState) // no debounce !
       {
         _oldState = _curState;
-        DEBUG(" > Bin "); DEBUGln(_pin);
+        DEBUG(F(" >Bin")); DEBUGln(_curState);
         if (_trigger) {
           publishTrigger(_inverted ? !_curState : _curState);
         } else {

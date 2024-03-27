@@ -89,7 +89,7 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 
 //#define WITH_BINARY_0       PIN_IO_0  //              Switch on IO0
 //#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
-#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
+//#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
 
 //#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
 //#define WITH_TEMP_0         T_TMP36   //  > 1 of 3    TMP36 on IO0
@@ -113,7 +113,7 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 // wake up on any change of IO (FALL, RISE)
 //#define WAKEUP_ON_IO0
 //#define WAKEUP_ON_IO1
-#define WAKEUP_ON_IO2
+//#define WAKEUP_ON_IO2
 
 
 // RadioLink IDs
@@ -187,7 +187,7 @@ void setup()
   digitalWrite(PIN_VL33_DRV, DRVON);
   delay(100);
 
-  DEBUGln("\nStart, V33 On");
+  DEBUGln(F("\nStart"));
 
   if (startLoRa())
   {
@@ -223,15 +223,7 @@ void setup()
 #endif
 
 #ifdef WITH_TEMP_0
-#if WITH_TEMP_0 == PIN_IO_0
-  ML_addSensor(new Temperature(CHILD_ID_INPUT1, PIN_IO_0));
-#endif
-#if WITH_TEMP_0 == TMP36
-  ML_addSensor(new Temperature(CHILD_ID_INPUT1, TEMP_TMP36));
-#endif
-#if WITH_TEMP_0 == LM35
-  ML_addSensor(new Temperature(CHILD_ID_INPUT1, TEMP_LM35));
-#endif
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, WITH_TEMP_0));
 #endif
 
 #ifdef WITH_TEMP_1
@@ -287,11 +279,11 @@ bool startLoRa()
   if (LoraOK)
   {
     RLcomm.setWaitOnTx(true);
-    DEBUGln("LoRa OK");
+    DEBUGln(F("LR OK"));
     return true;
   } else
   {
-    DEBUGln("LoRa Error");
+    DEBUGln(F("LR KO"));
 #ifdef DEBUG_LED
     // To show LoRa error on H1 LED
     for (byte b = 0; b < 3; b++)
@@ -308,10 +300,10 @@ void sendData()
   if (LoraOK)
   {
     LED_ON;
-    DEBUGln("Send data");
+    DEBUGln(F("data?"));
     // Walk any sensor in Module to send data
     ML_SendSensors();
-  } else { // if LoRaOK
+  } else {
     LED_ON; delay(30);
   }
   LED_OFF;
@@ -320,7 +312,7 @@ void sendData()
 // Power Off driver : Watchdog timing and IO Interrupt
 void powerOff()
 {
-  DEBUGln("goto sleep");
+  DEBUGln(F("sleep"));
   RLcomm.sleep();
   RLcomm.end();
   digitalWrite(PIN_VL33_DRV, DRVOFF);
@@ -366,7 +358,7 @@ void powerOff()
   PCMSK0 &= ~bit(PCINT7);
   sei();
 
-  DEBUGln("wake up");
+  DEBUGln(F("wake-up"));
 
   digitalWrite(PIN_VL33_DRV, DRVON);
   ADCSRA |= (1 << ADEN); // ADC enabled

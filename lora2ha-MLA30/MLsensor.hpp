@@ -5,16 +5,13 @@ class MLsensor
   public:
     MLsensor(uint8_t id) {
       _id = id;
-      DEBUG(id);
       _deviceType = rl_device_t::S_CUSTOM;
       _dataType = rl_data_t::V_NUM;
-
-      _packet.current.destinationID = HUB_UID;
-      _packet.current.senderID = SENSOR_ID;
-      _packet.current.childID = _id;
     }
-    virtual void begin() {}
-    virtual uint32_t Send(int delta = 0) {}
+    virtual void begin() {
+    }
+    virtual uint32_t Send(int delta = 0) {
+    }
     void publishConfig() {
       rl_config_t cnf;
       memset(&cnf, 0, sizeof(cnf));
@@ -24,6 +21,9 @@ class MLsensor
       RLcomm.publishConfig(HUB_UID, SENSOR_ID, CHILD_PARAM, cnf);
     }
     void publishPacket() {
+      _packet.current.destinationID = HUB_UID;
+      _packet.current.senderID = SENSOR_ID;
+      _packet.current.childID = _id;
       _packet.current.sensordataType = (_deviceType << 3) + _dataType;
       RLcomm.publishPaquet(&_packet);
     }
@@ -51,7 +51,6 @@ class MLsensor
     uint8_t _id;
     rl_device_t _deviceType;
     rl_data_t _dataType;
-    //    rl_packets _packet;
 };
 
 MLsensor** _sensorList;
@@ -60,7 +59,6 @@ uint8_t _sensorCount = 0;
 MLsensor* ML_addSensor(MLsensor* newSensor) {
   _sensorList = (MLsensor**)realloc(_sensorList, (_sensorCount + 1) * sizeof(MLsensor*));
   if (_sensorList == nullptr) {
-    //int i = 50; while (i--) { LED_ON; delay(50); LED_OFF; delay(100); }
     return nullptr;
   }
   _sensorList[_sensorCount] = newSensor;

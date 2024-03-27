@@ -38,7 +38,7 @@ class Ultrasonic : public MLsensor
       if (abs(distance_mm - _oldDistance) > delta)
       {
         _oldDistance = distance_mm;
-        DEBUGln(" > Distance");
+        DEBUG(F(" >Dist")); DEBUGln(distance_mm);
         publishNum(distance_mm);
         return distance_mm;
       }

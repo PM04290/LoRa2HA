@@ -23,22 +23,28 @@ class VCC : public MLsensor
     }
   protected:
     // Measure internal VCC
-    long readVcc() {
+    uint16_t readVcc() {
+      long result;
+      uint8_t saveADMUX = ADMUX;
       // Read 1.1V reference against AVcc
       // set the reference to Vcc and the measurement to the internal 1.1V reference
 #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
       ADMUX = _BV(REFS0) | _BV(MUX4) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 #elif defined (__AVR_ATtiny24__) || defined(__AVR_ATtiny44__) || defined(__AVR_ATtiny84__)
-      ADMUX = _BV(MUX5) | _BV(MUX0) ;
+      ADMUX = _BV(MUX5) | _BV(MUX0);
 #else
       ADMUX = _BV(REFS0) | _BV(MUX3) | _BV(MUX2) | _BV(MUX1);
 #endif
+      ADCSRA |= (1 << ADEN); //  Enable ADC
       delay(2); // Wait for Vref to settle
-      ADCSRA |= _BV(ADSC); // Convert
-      while (bit_is_set(ADCSRA, ADSC));
-      long result = ADCL;
-      result |= ADCH << 8;
-      result = 1126400L / result; // Back-calculate AVcc in mV
+      for (uint8_t n = 0; n < 8; n++) {
+        ADCSRA |= _BV(ADSC); // Convert
+        while (bit_is_set(ADCSRA, ADSC));
+        result = ADCW;
+        result = 1100L * 1023L / result; // Back-calculate AVcc in mV
+      }
+      ADMUX = saveADMUX;
+      delay(2); // Wait for Vref to settle
       return result;
     }
   private:

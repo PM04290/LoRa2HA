@@ -20,6 +20,9 @@ class Photoresistor : public MLsensor
       // mandatory
       _deviceType = rl_device_t::S_NUMERICSENSOR;
       _dataType = rl_data_t::V_NUM;
+      if (_pin <= PIN_IO_2) {
+        pinMode(_pin, INPUT);
+      }
     }
     void begin() override {
       if (isnan(_coef_m)) {
@@ -33,7 +36,7 @@ class Photoresistor : public MLsensor
       if (abs(valLux - oldLux) > delta)
       {
         oldLux = valLux;
-        DEBUG(" > Photo");
+        DEBUG(" >Photo"); DEBUGln(valLux);
         publishNum(valLux);
         return valLux;
       }
@@ -43,7 +46,7 @@ class Photoresistor : public MLsensor
     uint32_t ADCtoLux(int ldrRaw)
     {
       // for LDR on GND
-      uint32_t mvLDR = (ldrRaw * mVCC) / 1023;
+      uint32_t mvLDR = (ldrRaw * (long)mVCC) / 1023;
       uint32_t ldrResistance = (mvLDR) * REF_RESISTANCE / (mVCC - mvLDR);
 
       float lux = pow(10, _coef_b) * pow(ldrResistance, _coef_m);

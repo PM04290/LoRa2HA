@@ -12,7 +12,7 @@
 class Photoresistor : public MLsensor
 {
   public:
-    Photoresistor(uint8_t childID, uint8_t pin) : MLsensor(childID) {
+    Photoresistor(uint8_t childID, uint8_t pin, uint16_t delta) : MLsensor(childID, delta) {
       _pin = pin;
       _coef_m = NAN;
       _coef_b = NAN;
@@ -30,10 +30,10 @@ class Photoresistor : public MLsensor
         _coef_b =  log10(L1) - (_coef_m * log10(R1));
       }
     }
-    uint32_t Send(int delta = 10) override
+    uint32_t Send() override
     {
       uint16_t valLux = ADCtoLux(analogRead(_pin));
-      if (abs(valLux - oldLux) > delta)
+      if (abs(valLux - oldLux) > _delta)
       {
         oldLux = valLux;
         DEBUG(" >Photo"); DEBUGln(valLux);

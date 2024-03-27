@@ -2,7 +2,7 @@
 class VCC : public MLsensor
 {
   public:
-    VCC(uint8_t childID) : MLsensor(childID) {
+    VCC(uint8_t childID) : MLsensor(childID, 5) {
       oldvBat = 0;
       // mandatory
       _deviceType = rl_device_t::S_NUMERICSENSOR;
@@ -10,10 +10,10 @@ class VCC : public MLsensor
     }
     void begin() override {
     }
-    uint32_t Send(int delta = 5) override
+    uint32_t Send() override
     {
       mVCC = readVcc();
-      if (abs(mVCC - oldvBat) > delta)
+      if (abs(mVCC - oldvBat) > _delta)
       {
         oldvBat = mVCC;
         DEBUG(F(" >Vcc")); DEBUGln(mVCC);

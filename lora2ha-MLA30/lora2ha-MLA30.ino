@@ -200,66 +200,66 @@ void setup()
 
 #ifdef WITH_BINARY_0
 #ifdef WAKEUP_ON_IO0
-  ML_addSensor(new BinaryIO(WITH_BINARY_0, CHILD_ID_INPUT1, true));  // Trigger
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT1, WITH_BINARY_0, true));  // Trigger
 #else
-  ML_addSensor(new BinaryIO(WITH_BINARY_0, CHILD_ID_INPUT1));        // Binary sensor
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT1, WITH_BINARY_0));        // Binary sensor
 #endif
 #endif
 
 #ifdef WITH_BINARY_1
 #ifdef WAKEUP_ON_IO1
-  ML_addSensor(new BinaryIO(WITH_BINARY_1, CHILD_ID_INPUT2, true));
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT2, WITH_BINARY_1, true));
 #else
-  ML_addSensor(new BinaryIO(WITH_BINARY_1, CHILD_ID_INPUT2));
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT2, WITH_BINARY_1));
 #endif
 #endif
 
 #ifdef WITH_BINARY_2
 #ifdef WAKEUP_ON_IO2
-  ML_addSensor(new BinaryIO(WITH_BINARY_2, CHILD_ID_INPUT3, true));
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT3, WITH_BINARY_2, true));
 #else
-  ML_addSensor(new BinaryIO(WITH_BINARY_2, CHILD_ID_INPUT3));
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT3, WITH_BINARY_2));
 #endif
 #endif
 
 #ifdef WITH_TEMP_0
-  ML_addSensor(new Temperature(CHILD_ID_INPUT1, WITH_TEMP_0));
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, WITH_TEMP_0, 3.0));
 #endif
 
 #ifdef WITH_TEMP_1
-  ML_addSensor(new Temperature(CHILD_ID_INPUT2, WITH_TEMP_1));
+  ML_addSensor(new Temperature(CHILD_ID_INPUT2, WITH_TEMP_1, 3.0));
 #endif
 
 #ifdef WITH_TEMP_2
-  ML_addSensor(new Temperature(CHILD_ID_INPUT3, WITH_TEMP_2));
+  ML_addSensor(new Temperature(CHILD_ID_INPUT3, WITH_TEMP_2, 3.0));
 #endif
 
 #ifdef WITH_PHOTO_0
-  ML_addSensor(new Photoresistor(CHILD_ID_INPUT1, WITH_PHOTO_0));
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT1, WITH_PHOTO_0, 30));
 #endif
 
 #ifdef WITH_PHOTO_1
-  ML_addSensor(new Photoresistor(CHILD_ID_INPUT2, WITH_PHOTO_1));
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT2, WITH_PHOTO_1, 30));
 #endif
 
 #ifdef WITH_PHOTO_2
-  ML_addSensor(new Photoresistor(CHILD_ID_INPUT3, WITH_PHOTO_2));
+  ML_addSensor(new Photoresistor(CHILD_ID_INPUT3, WITH_PHOTO_2, 30));
 #endif
 
 #ifdef WITH_WEIGHT_0
-  ML_addSensor(new Weight(CHILD_ID_INPUT1, WITH_WEIGHT_0));
+  ML_addSensor(new Weight(CHILD_ID_INPUT1, WITH_WEIGHT_0, 10));
 #endif
 
 #ifdef WITH_WEIGHT_1
-  ML_addSensor(new Weight(CHILD_ID_INPUT2, WITH_WEIGHT_1));
+  ML_addSensor(new Weight(CHILD_ID_INPUT2, WITH_WEIGHT_1, 10));
 #endif
 
 #ifdef WITH_WEIGHT_2
-  ML_addSensor(new Weight(CHILD_ID_INPUT3, WITH_WEIGHT_2));
+  ML_addSensor(new Weight(CHILD_ID_INPUT3, WITH_WEIGHT_2, 10));
 #endif
 
 #if WITH_DISTANCE == D_PULSE
-  ML_addSensor(new Ultrasonic(CHILD_ID_INPUT3));
+  ML_addSensor(new Ultrasonic(CHILD_ID_INPUT3, 5));
 #endif
 
   ML_begin();

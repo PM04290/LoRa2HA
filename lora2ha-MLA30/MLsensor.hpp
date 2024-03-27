@@ -3,14 +3,15 @@ rl_packets _packet;
 class MLsensor
 {
   public:
-    MLsensor(uint8_t id) {
+    MLsensor(uint8_t id, uint16_t delta) {
       _id = id;
       _deviceType = rl_device_t::S_CUSTOM;
       _dataType = rl_data_t::V_NUM;
+      _delta = delta;
     }
     virtual void begin() {
     }
-    virtual uint32_t Send(int delta = 0) {
+    virtual uint32_t Send() {
     }
     void publishConfig() {
       rl_config_t cnf;
@@ -51,6 +52,7 @@ class MLsensor
     uint8_t _id;
     rl_device_t _deviceType;
     rl_data_t _dataType;
+    uint16_t _delta; 
 };
 
 MLsensor** _sensorList;

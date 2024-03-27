@@ -1,7 +1,7 @@
 class BinaryIO : public MLsensor
 {
   public:
-    BinaryIO(uint8_t pin, uint8_t childID, uint8_t trigger = false, uint8_t inverted = false) : MLsensor(childID) {
+    BinaryIO(uint8_t childID, uint8_t pin, uint8_t trigger = false, uint8_t inverted = false) : MLsensor(childID, 0) {
       _pin = pin;
       _inverted = inverted;
       _trigger = trigger;
@@ -17,7 +17,7 @@ class BinaryIO : public MLsensor
     }
     void begin() override {
     }
-    uint32_t Send(int delta = 10) override {
+    uint32_t Send() override {
       // NOTE : there is no debounce process in this example, you
       // may put a capacitor (10nF) on entry if you want it, or make a dedicated code
 

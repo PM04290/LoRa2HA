@@ -1,5 +1,5 @@
 //
-#define BETA        3450   // coef beta
+#define BETA        3000   // coef beta
 #define RESISTOR    4700   // reference resistor
 #define R_REF       5000   // thermistor value
 #define T_REF       298.15 // nominal temperature (Kelvin) (25°)
@@ -8,7 +8,7 @@
 class Temperature : public MLsensor
 {
   public:
-    Temperature(uint8_t childID, uint8_t pin) : MLsensor(childID) {
+    Temperature(uint8_t childID, uint8_t pin, float delta) : MLsensor(childID, delta * 10) {
       _oldTemp = -99;
       _pin = pin;
       // mandatory
@@ -20,7 +20,7 @@ class Temperature : public MLsensor
     }
     virtual void begin() override {
     }
-    virtual uint32_t Send(int delta = 3)
+    virtual uint32_t Send()
     {
       uint16_t ADCtemperature;
       if (_pin == T_TMP36 || _pin == T_LM35) {
@@ -29,7 +29,7 @@ class Temperature : public MLsensor
         ADCtemperature = analogRead(_pin);
       }
       int16_t valTemp = calcTemperature(ADCtemperature) * 10.0; // 1/10°
-      if (abs(valTemp - _oldTemp) > delta)
+      if (abs(valTemp - _oldTemp) > _delta)
       {
         _oldTemp = valTemp;
         DEBUG(F(" >Temp")); DEBUGln(valTemp);

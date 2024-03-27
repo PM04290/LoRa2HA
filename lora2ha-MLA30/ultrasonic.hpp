@@ -7,7 +7,7 @@
 class Ultrasonic : public MLsensor
 {
   public:
-    Ultrasonic(uint8_t childID) : MLsensor(childID) {
+    Ultrasonic(uint8_t childID, uint16_t delta) : MLsensor(childID, delta) {
       _oldDistance = -1;
       // mandatory
       _deviceType = rl_device_t::S_NUMERICSENSOR;
@@ -19,7 +19,7 @@ class Ultrasonic : public MLsensor
     }
     // Send lora packet if Delta measured since last sent
     // Return Distance sent (or false if not Delsta)
-    uint32_t Send(int delta = 10) override {
+    uint32_t Send() override {
       // make 10µs pulse on ouput pulse pin
       digitalWrite(PIN_IO_1, LOW);
       delayMicroseconds(5);
@@ -35,7 +35,7 @@ class Ultrasonic : public MLsensor
       // too much difference between 2 measure
       //distance = _KalmanUS.update( distance );
       
-      if (abs(distance_mm - _oldDistance) > delta)
+      if (abs(distance_mm - _oldDistance) > _delta)
       {
         _oldDistance = distance_mm;
         DEBUG(F(" >Dist")); DEBUGln(distance_mm);

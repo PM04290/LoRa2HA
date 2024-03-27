@@ -18,7 +18,7 @@ WeightAnalog Wsensor(PIN_IO_2);
 
 class Weight : public MLsensor {
   public:
-    Weight(uint8_t childID, uint8_t pin) : MLsensor(childID) {
+    Weight(uint8_t childID, uint8_t pin, uint16_t delta) : MLsensor(childID, delta) {
       _pin = pin;
       _oldWeight = 0;
       // mandatory
@@ -31,10 +31,10 @@ class Weight : public MLsensor {
     }
     // Send lora packet if Delta (g) measured since last sent
     // Return Weight sent (or false if not Delta)
-    uint32_t Send(int delta = 30) override {
+    uint32_t Send() override {
       int32_t weight;
       weight = Wsensor.readData(500); // 500ms timeout
-      if ((weight > 0) && (abs(weight - _oldWeight) > delta))
+      if ((weight > 0) && (abs(weight - _oldWeight) > _delta))
       {
         _oldWeight = weight;
         DEBUG(F(" >Weight")); DEBUGln(weight);

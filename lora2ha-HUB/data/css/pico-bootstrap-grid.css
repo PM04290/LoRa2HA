@@ -17,14 +17,14 @@
   --border-radius: 0.25rem;
   --border-width: 1px;
   --outline-width: 3px;
-  --spacing: 0.6rem;
+  --spacing: 0.5rem;
   --typography-spacing-vertical: 1.3rem;
   --block-spacing-vertical: calc(var(--spacing) * 1.2);
   --block-spacing-horizontal: var(--spacing);
   --grid-spacing-vertical: 0;
   --grid-spacing-horizontal: var(--spacing);
-  --form-element-spacing-vertical: 0.3rem;
-  --form-element-spacing-horizontal: 0.3rem;
+  --form-element-spacing-vertical: 0.15rem;
+  --form-element-spacing-horizontal: 0.2rem;
   --nav-element-spacing-vertical: 0.3rem;
   --nav-element-spacing-horizontal: 0.5rem;
   --nav-link-spacing-vertical: 0.5rem;
@@ -1883,12 +1883,12 @@ article > header,
 article > footer {
   margin-right: calc(var(--block-spacing-horizontal) * -1);
   margin-left: calc(var(--block-spacing-horizontal) * -1);
-  padding: calc(var(--block-spacing-vertical) * 0.3) var(--block-spacing-horizontal);
+  padding: calc(var(--block-spacing-vertical) * 0.1) calc(var(--block-spacing-horizontal)*0.5);
   background-color: var(--card-sectionning-background-color);
 }
 article > header {
   margin-top: calc(var(--block-spacing-vertical) * -1);
-  margin-bottom: calc(var(--block-spacing-vertical) * 0.3);
+  margin-bottom: calc(var(--block-spacing-vertical) * 0.1);
   border-bottom: var(--border-width) solid var(--card-border-color);
   border-top-right-radius: var(--border-radius);
   border-top-left-radius: var(--border-radius);
@@ -2665,7 +2665,7 @@ textarea,
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  */
 .row {
-  --bs-gutter-x: 1.5rem;
+  --bs-gutter-x: 0.5rem;
   --bs-gutter-y: 0;
   display: flex;
   flex-wrap: wrap;

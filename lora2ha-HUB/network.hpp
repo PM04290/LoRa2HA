@@ -5,7 +5,6 @@
 
 #ifdef USE_ETHERNET
 #include <ETH.h>
-static bool eth_connected = false;
 #endif
 
 #include "include_html.hpp"
@@ -13,17 +12,34 @@ static bool eth_connected = false;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-static bool eth_allowed = false;
 bool wifiOK1time = false;
-
-String uniqueid = "?";
-String version_major = "?";
-String version_minor = "?";
 
 bool logPacket = false;
 
-boolean isValidNumber(String str)
+enum WMode {
+  Mode_WifiSTA = 0,
+  Mode_WifiAP,
+  Mode_Ethernet
+};
+
+boolean isValidFloat(String str)
 {
+  if (str.startsWith("-"))
+    str.remove(0, 1);
+  for (byte i = 0; i < str.length(); i++)
+  {
+    if (!isDigit(str.charAt(i)) && (str.charAt(i) != '.'))
+    {
+      return false;
+    }
+  }
+  return str.length() > 0;
+}
+
+boolean isValidInt(String str)
+{
+  if (str.startsWith("-"))
+    str.remove(0, 1);
   for (byte i = 0; i < str.length(); i++)
   {
     if (!isDigit(str.charAt(i)))
@@ -227,26 +243,37 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     const char* sensortype[12] = {"Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"};
     blocC.replace("%CNFC_STYPE_INT%", String((int)ch->getSensorType()));
     blocC.replace("%CNFC_STYPE_STR%", sensortype[(int)ch->getSensorType()]);
-    if ((int)ch->getSensorType() == 1)
+    switch ((int)ch->getSensorType())
     {
-      blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
-      blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
-      blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
-      blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
-      blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
-      blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
-      blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
-      blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
-    } else
-    {
-      blocC.replace("%CNFC_CLASS%", "");
-      blocC.replace("%CNFC_CATEGORY%", "");
-      blocC.replace("%CNFC_UNIT%", "");
-      blocC.replace("%CNFC_EXPIRE%", "");
-      blocC.replace("%CNFC_MINI%", "");
-      blocC.replace("%CNFC_MAXI%", "");
-      blocC.replace("%CNFC_CA%", "");
-      blocC.replace("%CNFC_CB%", "");
+      case 0:
+        blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
+        blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
+        blocC.replace("%CNFC_UNIT%", "");
+        blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_MINI%", "");
+        blocC.replace("%CNFC_MAXI%", "");
+        blocC.replace("%CNFC_CA%", "");
+        blocC.replace("%CNFC_CB%", "");
+        break;
+      case 1:
+        blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
+        blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
+        blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
+        blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
+        blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
+        blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
+        blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
+        blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
+        break;
+      default:
+        blocC.replace("%CNFC_CLASS%", "");
+        blocC.replace("%CNFC_CATEGORY%", "");
+        blocC.replace("%CNFC_UNIT%", "");
+        blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_MINI%", "");
+        blocC.replace("%CNFC_MAXI%", "");
+        blocC.replace("%CNFC_CA%", "");
+        blocC.replace("%CNFC_CB%", "");
     }
   } else
   {
@@ -260,6 +287,7 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     blocC.replace("%CNFC_STYPE_INT%", "");
     blocC.replace("%CNFC_STYPE_STR%", "");
     blocC.replace("%CNFC_CLASS%", "");
+    blocC.replace("%CNFC_CATEGORY%", "");
     blocC.replace("%CNFC_UNIT%", "");
     blocC.replace("%CNFC_EXPIRE%", "");
     blocC.replace("%CNFC_MINI%", "");
@@ -468,9 +496,12 @@ void onConfigRequest(AsyncWebServerRequest * request)
         // on laisse Name vide pour supprimer un Device
         if (request->getParam(valdev + "_" + keydev + "_name", true)->value() != "")
         {
-          if (isValidNumber(sval))
+          if (isValidInt(sval))
           {
             Jconfig[valdev][keydev.toInt()][attrdev] = sval.toInt();
+          } else if (isValidFloat(sval))
+          {
+            Jconfig[valdev][keydev.toInt()][attrdev] = sval.toFloat();
           } else
           {
             Jconfig[valdev][keydev.toInt()][attrdev] = sval;
@@ -481,9 +512,12 @@ void onConfigRequest(AsyncWebServerRequest * request)
         // on laisse Label vide pour supprimer un Child
         if (request->getParam(valdev + "_" + keydev + "_" + attrdev + "_"  + keychild + "_label", true)->value() != "")
         {
-          if (isValidNumber(sval))
+          if (isValidInt(sval))
           {
             Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toInt();
+          } else if (isValidFloat(sval))
+          {
+            Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toFloat();
           } else
           {
             Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval;
@@ -492,14 +526,14 @@ void onConfigRequest(AsyncWebServerRequest * request)
       }
     }
     /*
-    // nettoyage des pages vides
-    for (JsonArray::iterator it = Jconfig["dev"].as<JsonArray>().begin(); it != Jconfig["dev"].as<JsonArray>().end(); ++it)
-    {
+      // nettoyage des pages vides
+      for (JsonArray::iterator it = Jconfig["dev"].as<JsonArray>().begin(); it != Jconfig["dev"].as<JsonArray>().end(); ++it)
+      {
       if (!(*it).containsKey("childs"))
       {
         Jconfig["dev"].as<JsonArray>().remove(it);
       }
-    }*/
+      }*/
     //
     Jconfig["end"] = true;
     String Jres;
@@ -519,6 +553,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
   if (request->hasParam("cnfcode", true))
   {
     AP_ssid[7] = request->getParam("cnfcode", true)->value().c_str()[0];
+    UIDcode = AP_ssid[7] - '0';
     strcpy(Wifi_ssid, request->getParam("wifissid", true)->value().c_str() );
     strcpy(Wifi_pass, request->getParam("wifipass", true)->value().c_str() );
     strcpy(mqtt_host, request->getParam("mqtthost", true)->value().c_str() );
@@ -537,8 +572,8 @@ void onConfigRequest(AsyncWebServerRequest * request)
     DEBUGln(mqtt_pass);
     DEBUGln(RadioFreq);
 
-    EEPROM.writeChar(0, AP_ssid[7]);
-    EEPROM.writeUShort(1, RadioFreq);
+    EEPROM.writeChar(EEPROM_DATA_CODE, AP_ssid[7]);
+    EEPROM.writeUShort(EEPROM_DATA_FREQ, RadioFreq);
     EEPROM.writeString(EEPROM_TEXT_OFFSET, Wifi_ssid);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 1), Wifi_pass);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
@@ -656,6 +691,46 @@ void initWeb()
   DEBUGln("HTTP server started");
 }
 
+uint8_t getWMODE()
+{
+  uint8_t wmode = Mode_WifiSTA;
+
+  uint8_t ethOK = false;
+#ifdef PIN_ETH_LINK
+  ethOK = digitalRead(PIN_ETH_LINK) == LOW;
+#endif
+
+#ifdef USE_ETHERNET
+
+#ifdef FORCE_ETHERNET
+  DEBUGln("Force ETH");
+  return Mode_Ethernet;
+#endif
+
+  int wm = analogRead(PIN_WMODE);
+  DEBUGf("WM(mv) : %d\n", wm);
+  if (ethOK || (wm > 125 && wm < 3970)) {  //  Ethernet from 0.1 to 3.2v or LINK
+    wmode = Mode_Ethernet;
+    DEBUGln("WMode : Ethernet");
+  } else
+  if (wm < 125) {                          // AP under 0.1v
+    wmode = Mode_WifiAP;
+    DEBUGln("WMode : Wifi AP");
+  } else {                                 // STA up to 3.2v
+    DEBUGln("WMode : Wifi STA");
+  }
+#else
+  DEBUGf("pin %d : %d\n", PIN_WMODE, digitalRead(PIN_WMODE));
+  if (digitalRead(PIN_WMODE) == LOW || strlen(Wifi_ssid) == 0) {
+    wmode = Mode_WifiAP;
+    DEBUGln("WMode : Wifi AP");
+  } else {
+    DEBUGln("WMode : Wifi STA");
+  }
+#endif
+  return wmode;
+}
+
 #ifdef USE_ETHERNET
 void startETH()
 {
@@ -694,32 +769,30 @@ void startWifiAP()
 
 void initNetwork()
 {
-  bool wifiok = false;
-
   WiFi.onEvent(WiFiEvent);
-
-#ifdef USE_ETHERNET
-  startETH();
-  delay(500);
 
 #ifdef PIN_ETH_LINK
   pinMode(PIN_ETH_LINK, INPUT);
-  eth_allowed = (digitalRead(PIN_ETH_LINK) == LOW);
 #endif
 
+#ifndef USE_ETHERNET
+  pinMode(PIN_WMODE, INPUT_PULLUP); // Wifi STA by default (Short cut to GND to have AP)
 #endif
-  if (eth_allowed == false)
-  {
-    // Mode normal
-    startWifiSTA();
 
-    wifiok = WiFi.status() == WL_CONNECTED;
-    if (wifiok == false)
-    {
-      // Mode AP
+  switch (getWMODE()) {
+    case Mode_WifiSTA:
+      startWifiSTA();
+      break;
+    case Mode_WifiAP:
       startWifiAP();
-    }
+      break;
+#ifdef USE_ETHERNET
+    case Mode_Ethernet:
+      startETH();
+      break;
+#endif
   }
+
   if (MDNS.begin(AP_ssid))
   {
     MDNS.addService("http", "tcp", 80);

@@ -7,6 +7,7 @@ enum EntityCategory {
   CategoryDiagnostic
 };
 
+
 class Device;
 
 class Child {
@@ -28,11 +29,12 @@ class Child {
     HABaseDeviceType* getHADevice();
     // HA -> LoRa commands
     void switchToLoRa(int state);
-    void lightStateToLoRa(bool state);
-    void lightBrightnessToLoRa(uint8_t brightness);
-    void lightColorTemperature(uint16_t temperature);
-    void lightRGBColor(HALight::RGBColor color);
-    void coverToLoRa(HACover::CoverCommand cmd);
+    /*
+      void lightStateToLoRa(bool state);
+      void lightBrightnessToLoRa(uint8_t brightness);
+      void lightColorTemperature(uint16_t temperature);
+      void lightRGBColor(HALight::RGBColor color);
+      void coverToLoRa(HACover::CoverCommand cmd);*/
     void inputnumberToLoRa(HANumeric number);
   protected:
     Device* _device;
@@ -81,9 +83,12 @@ class HubDev {
     Device* getDeviceById(uint8_t address);
     Child* getChildById(uint8_t address, uint8_t id);
     Child* getChildByHAbase(HABaseDeviceType* HAdevice);
+    void setUniqueId(const byte* uniqueId, const uint16_t length);
+    const char* getUniqueId();
   protected:
     Device** _deviceList;
     int _nbDevice;
+    const char* _uniqueId;
 };
 
 HubDev hub;
@@ -97,51 +102,51 @@ void onSwitchCommand(bool state, HASwitch* sender)
     ch->switchToLoRa(state);
   }
 }
-
-void onLightStateCommand(bool state, HALight* sender)
-{
+/*
+  void onLightStateCommand(bool state, HALight* sender)
+  {
   Child* ch = hub.getChildByHAbase(sender);
   if (ch)
   {
     ch->lightStateToLoRa(state);
   }
-}
+  }
 
-void onLightBrightnessCommand(uint8_t brightness, HALight* sender) {
+  void onLightBrightnessCommand(uint8_t brightness, HALight* sender) {
   Child* ch = hub.getChildByHAbase(sender);
   if (ch)
   {
     ch->lightBrightnessToLoRa(brightness);
   }
-}
+  }
 
-void onLightColorTemperatureCommand(uint16_t temperature, HALight* sender)
-{
+  void onLightColorTemperatureCommand(uint16_t temperature, HALight* sender)
+  {
   Child* ch = hub.getChildByHAbase(sender);
   if (ch)
   {
     ch->lightColorTemperature(temperature);
   }
-}
+  }
 
-void onLightRGBColorCommand(HALight::RGBColor color, HALight* sender)
-{
+  void onLightRGBColorCommand(HALight::RGBColor color, HALight* sender)
+  {
   Child* ch = hub.getChildByHAbase(sender);
   if (ch)
   {
     ch->lightRGBColor(color);
   }
-}
+  }
 
-void onCoverCommand(HACover::CoverCommand cmd, HACover* sender)
-{
+  void onCoverCommand(HACover::CoverCommand cmd, HACover* sender)
+  {
   Child* ch = hub.getChildByHAbase(sender);
   if (ch)
   {
     ch->coverToLoRa(cmd);
   }
-}
-
+  }
+*/
 void onNumberCommand(HANumeric number, HANumber * sender)
 {
   Child* ch = hub.getChildByHAbase(sender);
@@ -156,6 +161,7 @@ HubDev::HubDev()
 {
   _nbDevice = 0;
   _deviceList = nullptr;
+  _uniqueId = nullptr;
 }
 
 uint8_t HubDev::getNbDevice()
@@ -239,6 +245,19 @@ Child* HubDev::getChildByHAbase(HABaseDeviceType* HAdevice)
     }
   }
   return nullptr;
+}
+
+void HubDev::setUniqueId(const byte* uniqueId, const uint16_t length)
+{
+  if (_uniqueId) {
+    return; // unique ID cannot be changed at runtime once it's set
+  }
+  _uniqueId = HAUtils::byteArrayToStr(uniqueId, length);
+}
+
+const char* HubDev::getUniqueId()
+{
+  return _uniqueId;
 }
 
 //************************************************
@@ -333,7 +352,7 @@ Child::Child(Device* parent, uint8_t id, const char* lbl, rl_device_t st, rl_dat
   _HAname = nullptr;
   _HAdevice = nullptr;
 
-  DEBUGf("   %d : %s st[%d] dt{%d] HA=%s\n", _id, _label, (int)_sensorType, (int)_dataType, _HAuid);
+  DEBUGf("   %d : %s st[%d] dt{%d] HA=%s %s %f %f\n", _id, _label, (int)_sensorType, (int)_dataType, _HAuid, _devclass, _coefA, _coefB);
 
   switch ((int)_sensorType)
   {
@@ -360,7 +379,7 @@ Child::Child(Device* parent, uint8_t id, const char* lbl, rl_device_t st, rl_dat
       }
       if (_expire)
       {
-        ((HASensorNumber*)_HAdevice)->setExpireAfter(_expire);
+        // TODO ((HASensorNumber*)_HAdevice)->setExpireAfter(_expire);
       }
       if (_category == CategoryDiagnostic)
       {
@@ -372,22 +391,22 @@ Child::Child(Device* parent, uint8_t id, const char* lbl, rl_device_t st, rl_dat
       ((HASwitch*)_HAdevice)->onCommand(onSwitchCommand);
       break;
     case S_LIGHT:
-      if (dt == V_BOOL)
-      {
-        _HAdevice = new HALight(_HAuid);
-        ((HALight*)_HAdevice)->onStateCommand(onLightStateCommand);
-      }
-      if (dt == V_RAW)
-      {
-        _HAdevice = new HALight(_HAuid, HALight::BrightnessFeature | HALight::ColorTemperatureFeature | HALight::RGBFeature);
-        ((HALight*)_HAdevice)->onStateCommand(onLightStateCommand);
-        ((HALight*)_HAdevice)->onBrightnessCommand(onLightBrightnessCommand);
-        ((HALight*)_HAdevice)->onColorTemperatureCommand(onLightColorTemperatureCommand);
-        ((HALight*)_HAdevice)->onRGBColorCommand(onLightRGBColorCommand);
-      }
+      /*      if (dt == V_BOOL)
+            {
+              _HAdevice = new HALight(_HAuid);
+              ((HALight*)_HAdevice)->onStateCommand(onLightStateCommand);
+            }
+            if (dt == V_RAW)
+            {
+              _HAdevice = new HALight(_HAuid, HALight::BrightnessFeature | HALight::ColorTemperatureFeature | HALight::RGBFeature);
+              ((HALight*)_HAdevice)->onStateCommand(onLightStateCommand);
+              ((HALight*)_HAdevice)->onBrightnessCommand(onLightBrightnessCommand);
+              ((HALight*)_HAdevice)->onColorTemperatureCommand(onLightColorTemperatureCommand);
+              ((HALight*)_HAdevice)->onRGBColorCommand(onLightRGBColorCommand);
+            }*/
       break;
     case S_COVER:
-      _HAdevice = new HACover(_HAuid);
+      //_HAdevice = new HACover(_HAuid);
       break;
     case S_FAN:
       //TODO
@@ -505,58 +524,58 @@ HABaseDeviceType* Child::getHADevice()
 void Child::switchToLoRa(int state)
 {
   DEBUGf("switch to lora V%d (%02d/%02d) %s=%d\n", _device->getRLversion(), _device->getAddress(), _id, _label, state);
-  RLcomm.publishSwitch(_device->getAddress(), 0, _id, state, _device->getRLversion());
+  RLcomm.publishSwitch(_device->getAddress(), UIDcode, _id, state, _device->getRLversion());
 }
-
-void Child::lightStateToLoRa(bool state)
-{
+/*
+  void Child::lightStateToLoRa(bool state)
+  {
   DEBUGf("light state to lora %s\n=%d", _label, state);
   if (_dataType == V_BOOL)
   {
-    RLcomm.publishBool(_device->getAddress(), 0, _id, state, _device->getRLversion());
+    RLcomm.publishBool(_device->getAddress(), UIDcode, _id, state, _device->getRLversion());
   }
   if (_dataType == V_RAW)
   {
     uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
     uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
     HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-    RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+    RLcomm.publishLight(_device->getAddress(), UIDcode, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
   }
-}
+  }
 
-void Child::lightBrightnessToLoRa(uint8_t brightness)
-{
+  void Child::lightBrightnessToLoRa(uint8_t brightness)
+  {
   DEBUGf("light brightness to lora %s=%d\n", _label, brightness);
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
   HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
-}
+  RLcomm.publishLight(_device->getAddress(), UIDcode, _id, state, brightness, temp, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+  }
 
-void Child::lightColorTemperature(uint16_t temperature)
-{
+  void Child::lightColorTemperature(uint16_t temperature)
+  {
   DEBUGf("light temperature to lora %s=%d\n", _label, temperature);
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
   HALight::RGBColor rgb = ((HALight*)_HAdevice)->getCurrentRGBColor();
-  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temperature, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
-}
+  RLcomm.publishLight(_device->getAddress(), UIDcode, _id, state, brightness, temperature, rgb.red, rgb.green, rgb.blue, _device->getRLversion());
+  }
 
-void Child::lightRGBColor(HALight::RGBColor color)
-{
+  void Child::lightRGBColor(HALight::RGBColor color)
+  {
   DEBUGf("light color to lora %s=%d:%d:%d\n", _label, color.red, color.green, color.blue);
   uint8_t state = ((HALight*)_HAdevice)->getCurrentState();
   uint8_t brightness = ((HALight*)_HAdevice)->getCurrentBrightness();
   uint16_t temp = ((HALight*)_HAdevice)->getCurrentColorTemperature();
-  RLcomm.publishLight(_device->getAddress(), 0, _id, state, brightness, temp, color.red, color.green, color.blue, _device->getRLversion());
-}
+  RLcomm.publishLight(_device->getAddress(), UIDcode, _id, state, brightness, temp, color.red, color.green, color.blue, _device->getRLversion());
+  }
 
-void Child::coverToLoRa(HACover::CoverCommand cmd)
-{
+  void Child::coverToLoRa(HACover::CoverCommand cmd)
+  {
   uint8_t pos = ((HACover*)_HAdevice)->getCurrentPosition();
-  RLcomm.publishCover(_device->getAddress(), 0, _id, (uint8_t)cmd, pos, _device->getRLversion());
-}
-
+  RLcomm.publishCover(_device->getAddress(), UIDcode, _id, (uint8_t)cmd, pos, _device->getRLversion());
+  }
+*/
 void Child::inputnumberToLoRa(HANumeric number)
 {
   if (number.isSet())
@@ -616,30 +635,30 @@ void Child::doPacketForHA(rl_packet_t p)
       ((HASwitch*)_HAdevice)->setState(p.data.num.value > 0);
       break;
     case S_LIGHT:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_BOOL)
-      {
-        ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
-      }
-      if (dt == V_RAW)
-      {
-        ((HALight*)_HAdevice)->setState(p.data.light.state);
-        ((HALight*)_HAdevice)->setBrightness(p.data.light.brightness);
-        ((HALight*)_HAdevice)->setColorTemperature(p.data.light.temperature);
-        ((HALight*)_HAdevice)->setRGBColor(HALight::RGBColor(p.data.light.red, p.data.light.green, p.data.light.blue) );
-      }
+      /*      dt = (rl_data_t)(p.sensordataType & 0x07);
+            if (dt == V_BOOL)
+            {
+              ((HALight*)_HAdevice)->setState(p.data.num.value > 0);
+            }
+            if (dt == V_RAW)
+            {
+              ((HALight*)_HAdevice)->setState(p.data.light.state);
+              ((HALight*)_HAdevice)->setBrightness(p.data.light.brightness);
+              ((HALight*)_HAdevice)->setColorTemperature(p.data.light.temperature);
+              ((HALight*)_HAdevice)->setRGBColor(HALight::RGBColor(p.data.light.red, p.data.light.green, p.data.light.blue) );
+            }*/
       break;
     case S_COVER:
-      dt = (rl_data_t)(p.sensordataType & 0x07);
-      if (dt == V_NUM)
-      {
-        ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
-      }
-      if (dt == V_RAW)
-      {
-        ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.cover.state);
-        ((HACover*)_HAdevice)->setPosition(p.data.cover.position);
-      }
+      /*      dt = (rl_data_t)(p.sensordataType & 0x07);
+            if (dt == V_NUM)
+            {
+              ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.num.value);
+            }
+            if (dt == V_RAW)
+            {
+              ((HACover*)_HAdevice)->setState((HACover::CoverState)p.data.cover.state);
+              ((HACover*)_HAdevice)->setPosition(p.data.cover.position);
+            }*/
       break;
     case S_FAN:
       // TODO

@@ -46,6 +46,13 @@ typedef struct
   rl_packets packets;
 } packet_version;
 
+#define MAX_PACKET 20
+packet_version packetTable[MAX_PACKET];
+volatile byte idxReadTable = 0;
+volatile byte idxWriteTable = 0;
+
+static bool eth_connected = false;
+
 #include "devices.hpp"
 #include "network.hpp"
 
@@ -56,16 +63,16 @@ HAMqtt mqtt(client, device, 50); // 50 devices max
 uint32_t curtime, oldtime = 0;
 byte ntick = 0;
 
-#define MAX_PACKET 10
-packet_version packetTable[MAX_PACKET];
-byte idxReadTable = 0;
-byte idxWriteTable = 0;
-
-void onMqttMessage(const char* topic, const uint8_t* payload, uint16_t length)
+// Callback for memory problem
+void heap_caps_alloc_failed_hook(size_t requested_size, uint32_t caps, const char *function_name)
 {
-  char* pl = (char*)payload;
-  pl[length] = 0;
+#ifdef DEBUG_SERIAL
+  printf("!!! %s failed to allocate %d bytes with 0x%X capabilities. \n", function_name, requested_size, caps);
+  printf("heap_caps_get_largest_free_block: %d\n", heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
+#endif
 }
+
+TimerHandle_t mqttReconnectTimer;
 
 void onMqttConnected()
 {
@@ -79,6 +86,8 @@ void onMqttDisconnected()
 
 bool getPacket(packet_version* p)
 {
+  bool result = false;
+  noInterrupts();
   if (idxReadTable != idxWriteTable)
   {
     *p = packetTable[idxReadTable];
@@ -88,107 +97,111 @@ bool getPacket(packet_version* p)
     {
       idxReadTable = 0;
     }
-    return true;
+    result = true;
   }
-  return false;
+  interrupts();
+  return result;
 }
 
 void onLoRaReceive(uint8_t len, rl_packet_t* p)
 {
-  if (p->destinationID == 0)
+  noInterrupts();
+  memcpy(&packetTable[idxWriteTable].packets.current, p, len);
+  packetTable[idxWriteTable].version = 1;
+  packetTable[idxWriteTable].lqi = RLcomm.lqi();
+  if (len == RL_PACKETV1_SIZE) packetTable[idxWriteTable].version = 1;
+  idxWriteTable++;
+  if (idxWriteTable >= MAX_PACKET)
   {
-    packetTable[idxWriteTable].packets.current = *p;
-    packetTable[idxWriteTable].version = 1;
-    packetTable[idxWriteTable].lqi = RLcomm.lqi();
-    if (len == RL_PACKETV1_SIZE) packetTable[idxWriteTable].version = 1;
-    idxWriteTable++;
-    if (idxWriteTable >= MAX_PACKET)
+    idxWriteTable = 0;
+  }
+  if (idxWriteTable == idxReadTable) // overload
+  {
+    idxReadTable++;
+    if (idxReadTable >= MAX_PACKET)
     {
-      idxWriteTable = 0;
-    }
-    if (idxWriteTable == idxReadTable)
-    {
-      idxReadTable++;
-      if (idxReadTable >= MAX_PACKET)
-      {
-        idxReadTable = 0;
-      }
+      idxReadTable = 0;
     }
   }
+  interrupts();
 }
 
-void processDevice()
+void processLoRa()
 {
   packet_version p;
   if (getPacket(&p))
   {
     rl_packet_t* cp = &p.packets.current;
     DEBUGf("V%d[%d%%] %d <= %d:%d = %d\n", p.version, p.lqi, cp->destinationID, cp->senderID, cp->childID, cp->data.num.value);
+
     if (logPacket)
     {
-      notifyLogPacket(&p.packets.current, p.lqi);
+      notifyLogPacket(cp, p.lqi);
     }
-    /* for ping test
-      if (p.packets.current.senderID == 99)
-      {
-      RLcomm.publishNum(99, 0, 2, p.lqi);
-      delay(100);
-      return;
-      }
-    */
-    Child* ch = hub.getChildById(p.packets.current.senderID, p.packets.current.childID);
-    if (ch != nullptr)
+
+    if (cp->destinationID == UIDcode) // Only for me
     {
-      switch (p.version) {
-        case 1:
-          ch->doPacketForHA(p.packets.current);
-          break;
-        default:
-          ch->doPacketForHA(p.packets.current);
-          break;
-      }
-    } else {
-      if (p.packets.current.childID == 0xFF) // config child
+      if (cp->senderID == 254) // if senderID = 254, ping needed
       {
-        Device* dev = hub.getDeviceById(p.packets.current.senderID);
-        //
-        uint8_t childID = p.packets.current.data.config.childID;
-        rl_device_t st = (rl_device_t)p.packets.current.data.config.deviceType;
-        rl_data_t dt = (rl_data_t)p.packets.current.data.config.dataType;
-        DEBUGf("Conf %d %d %d\n", childID, (int)st, (int)dt);
-        String js;
-        int d;
-        int c;
-        if (dev == nullptr)
-        {
-          d = hub.getNbDevice();
-          dev = hub.addDevice(new Device(p.packets.current.senderID, ""));
-          // new device address
-          // add blank device
-          docJson.clear();
-          docJson["cmd"] = "devnotify";
-          docJson["conf_child_" + String(d) + "_"] = getHTMLforDevice(d, dev);
-          js = "";
-          serializeJson(docJson, js);
-          ws.textAll(js);
+        RLcomm.publishNum(254, UIDcode, 2, p.lqi);
+        return;
+      }
+
+      Child* ch = hub.getChildById(cp->senderID, cp->childID);
+      if (ch != nullptr)
+      {
+        switch (p.version) {
+          case 1:
+            ch->doPacketForHA(*cp);
+            break;
+          default:
+            ch->doPacketForHA(*cp);
+            break;
         }
-        d = hub.getIdxDeviceByAddress(p.packets.current.senderID);
-        Child* chd = dev->getChildById(childID);
-        if (chd == nullptr)
+      } else {
+        if (cp->childID == 0xFF) // config child
         {
-          c = dev->getNbChild();
-          chd = new Child(dev, childID, "", st, dt, "", CategoryAuto, "");
-          dev->addChild(chd);
-          // add blank child
-          docJson.clear();
-          docJson["cmd"] = "childnotify";
-          docJson["conf_child_" + String(d) + "_" + String(c)] = getHTMLforChild(d, c, chd);
-          js = "";
-          serializeJson(docJson, js);
-          ws.textAll(js);
+          Device* dev = hub.getDeviceById(cp->senderID);
+          //
+          uint8_t childID = cp->data.config.childID;
+          rl_device_t st = (rl_device_t)cp->data.config.deviceType;
+          rl_data_t dt = (rl_data_t)cp->data.config.dataType;
+          DEBUGf("Conf %d %d %d\n", childID, (int)st, (int)dt);
+          String js;
+          int d;
+          int c;
+          if (dev == nullptr)
+          {
+            d = hub.getNbDevice();
+            dev = hub.addDevice(new Device(cp->senderID, ""));
+            // new device address
+            // add blank device
+            docJson.clear();
+            docJson["cmd"] = "devnotify";
+            docJson["conf_child_" + String(d) + "_"] = getHTMLforDevice(d, dev);
+            js = "";
+            serializeJson(docJson, js);
+            ws.textAll(js);
+          }
+          d = hub.getIdxDeviceByAddress(cp->senderID);
+          Child* chd = dev->getChildById(childID);
+          if (chd == nullptr)
+          {
+            c = dev->getNbChild();
+            chd = new Child(dev, childID, "", st, dt, "", CategoryAuto, "");
+            dev->addChild(chd);
+            // add blank child
+            docJson.clear();
+            docJson["cmd"] = "childnotify";
+            docJson["conf_child_" + String(d) + "_" + String(c)] = getHTMLforChild(d, c, chd);
+            js = "";
+            serializeJson(docJson, js);
+            ws.textAll(js);
+          }
         }
       }
     }
+
   }
 }
 
@@ -199,6 +212,7 @@ void setup()
   {
     delay(50);
   }
+  esp_err_t error = heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
   DEBUGln("Start debug");
 
   if (!SPIFFS.begin())
@@ -224,12 +238,12 @@ void setup()
           EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
           EEPROM.commit();
     */
-    char code = EEPROM.readChar(0);
+    char code = EEPROM.readChar(EEPROM_DATA_CODE);
     if (code >= '0' && code <= '9')
     {
       UIDcode = code - '0';
       AP_ssid[7] = code;
-      RadioFreq = EEPROM.readUShort(1);
+      RadioFreq = EEPROM.readUShort(EEPROM_DATA_FREQ);
       if (RadioFreq == 0xFFFF) RadioFreq = 433;
       strcpy(Wifi_ssid, EEPROM.readString(EEPROM_TEXT_OFFSET).c_str());
       strcpy(Wifi_pass, EEPROM.readString(EEPROM_TEXT_OFFSET + EEPROM_TEXT_SIZE * 1).c_str());
@@ -244,11 +258,17 @@ void setup()
       DEBUGln(mqtt_user);
       DEBUGln(mqtt_pass);
       DEBUGln(RadioFreq);
+
+      rstCount = EEPROM.readChar(EEPROM_DATA_COUNT) + 1;
+      EEPROM.writeChar(EEPROM_DATA_COUNT, rstCount);
+      EEPROM.commit();
+      DEBUGf("RST:%d\n", rstCount);
     }
   }
 
   if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 20))
   {
+    RLcomm.setWaitOnTx(true);
     DEBUGf("LoRa ok at %dMHz\n", RadioFreq);
   } else {
     DEBUGln("LoRa ERROR");
@@ -279,10 +299,9 @@ void setup()
     device.setSoftwareVersion(VERSION);
 
     mqtt.setDataPrefix("lora2ha");
-    mqtt.onMessage(onMqttMessage);
     mqtt.onConnected(onMqttConnected);
     mqtt.onDisconnected(onMqttDisconnected);
-    if (mqtt.begin(mqtt_host, mqtt_user, mqtt_pass))
+    if (mqtt.begin(mqtt_host, mqtt_port, mqtt_user, mqtt_pass))
     {
       DEBUGln("Mqtt ready");
     } else {
@@ -294,34 +313,22 @@ void setup()
 void loop()
 {
   curtime = millis();
-  if (curtime > oldtime + 1000 || curtime < oldtime)
+  if (curtime > ((oldtime + 1000) | 1))
   {
+    oldtime = curtime;
     ntick++;
     if (ntick >= 1800) { // 30min
       // TODO heartbeat
       ntick = 0;
     }
-    oldtime = curtime;
-  }
-  mqtt.loop();
-  processDevice();
-
-#ifdef USE_ETHERNET
+    if (ntick % 10 == 0) { // 10 sec
+    }
 #ifdef PIN_ETH_LINK
-  // detect Ethernet connected
-  if ((eth_allowed == false) && (digitalRead(PIN_ETH_LINK) == LOW))
-  {
-    eth_allowed = true;
-    ESP.restart(); // TODO
-  }
-  // detect Ethernet disconnected
-  if ((eth_allowed == true) && (digitalRead(PIN_ETH_LINK) == HIGH))
-  {
-    eth_allowed = false;
-    ESP.restart(); // TODO
-  }
+    //eth_allowed = (digitalRead(PIN_ETH_LINK) == LOW);
 #endif
-#endif
+  }
+  processLoRa();
+  mqtt.loop();
 }
 
 bool loadConfig()
@@ -342,9 +349,6 @@ bool loadConfig()
     DEBUGln("failed to deserialize config file");
     return false;
   }
-  uniqueid = docJson["uniqueid"].as<String>();
-  version_major = docJson["version_major"].as<String>();
-  version_minor = docJson["version_minor"].as<String>();
 
   // walk device array
   JsonVariant devices = docJson["dev"];
@@ -375,8 +379,12 @@ bool loadConfig()
             int32_t maxi(LONG_MAX);
             if (childItem["max"].is<int>())
               maxi = childItem["max"].as<int>();
-            float coefA = childItem["coefa"] | (float)1.0;
-            float coefB = childItem["coefb"] | (float)0.0;
+            float coefA = 1.;
+            if (childItem["coefa"].is<float>())
+              coefA = childItem["coefa"];
+            float coefB = 0.;
+            if (childItem["coefb"].is<float>())
+              coefB = childItem["coefb"];
             EntityCategory ec = EntityCategory::CategoryAuto;
             if (childItem["category"].is<int>())
               ec = (EntityCategory)childItem["category"].as<int>();

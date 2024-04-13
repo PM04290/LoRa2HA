@@ -14,5 +14,5 @@ del LoRa2HA.spiffs.bin
 )
 echo ==========================
 echo Telechargement du Firmware
-.\bin\esptool.exe --chip esp32 --port COM%usedcom% --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x1000 ./bin/WROOM.bootloader.bin 0x8000 ./bin/WROOM.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ../lora2ha-HUB.ino.d1_mini32.bin
+.\bin\esptool.exe --chip esp32 --port COM%usedcom% --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 80m --flash_size 4MB 0x1000 ./bin/WROOM.bootloader.bin 0x8000 ./bin/WROOM.partitions.bin 0xe000 ./bin/boot_app0.bin 0x10000 ../lora2ha-HUB.ino.esp32-poe-iso-eth.bin
 pause

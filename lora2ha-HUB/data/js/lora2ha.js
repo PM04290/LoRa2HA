@@ -69,7 +69,10 @@ function WSonMessage(event) {
 			if (cmd === "childnotify") {
 				let arr = key.split(/[_]+/);
 				let d = parseInt(arr[2]);
-				$("<div id='"+key+"' class='row'>"+value+"<div>").insertBefore("#footer_"+(d+1));
+				if ($("#"+key).length)
+					$("#"+key).html(value);
+				else
+					$("<div id='"+key+"' class='row'>"+value+"<div>").insertBefore("#footer_"+(d+1));
 				loadSelect();
 			}
 		} else {

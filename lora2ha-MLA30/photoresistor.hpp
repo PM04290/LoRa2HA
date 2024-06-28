@@ -18,8 +18,8 @@ class Photoresistor : public MLsensor
       _coef_b = NAN;
       oldLux = 0;
       // mandatory
-      _deviceType = rl_device_t::S_NUMERICSENSOR;
-      _dataType = rl_data_t::V_NUM;
+      _deviceType = rl_element_t::E_NUMERICSENSOR;
+      _dataType = rl_data_t::D_NUM;
       if (_pin <= PIN_IO_2) {
         pinMode(_pin, INPUT);
       }
@@ -32,12 +32,14 @@ class Photoresistor : public MLsensor
     }
     uint32_t Send() override
     {
+      uint8_t force = --_forceRefresh <= 0;
       uint16_t valLux = ADCtoLux(analogRead(_pin));
-      if (abs(valLux - oldLux) > _delta)
+      if (abs(valLux - oldLux) > _delta || force)
       {
         oldLux = valLux;
         DEBUG(" >Photo"); DEBUGln(valLux);
         publishNum(valLux);
+        _forceRefresh = FORCE_REFRESH_COUNT;
         return valLux;
       }
       return false;

@@ -1,5 +1,5 @@
 /*
-  Version 1.0
+  Version 1.3
   Designed for ATTiny84 (internal oscillator 1MHz)
   Hardware : MLA30 v1.1
 
@@ -13,8 +13,8 @@
 // ATMEL AVR ATTINY84
 //                   +-\/-+
 //             VCC  1|    |14  GND
-//      (D10)  PB0  2|    |13  PA0  (D 0) IO_0
-//      (D 9)  PB1  3|    |12  PA1  (D 1) IO_1
+// DBG  (D10)  PB0  2|    |13  PA0  (D 0) IO_0
+// DRV33(D 9)  PB1  3|    |12  PA1  (D 1) IO_1
 //       RST   PB3  4|    |11  PA2  (D 2) NRST
 // DIO0 (D 8)  PB2  5|    |10  PA3  (D 3) NSS
 // IO_2 (D 7)  PA7  6|    |9   PA4  (D 4) SCK
@@ -25,6 +25,7 @@
 
 #include <Arduino.h>
 #include <RadioLink.h>
+//#include <TinyWireM.h>
 #include "avr/sleep.h"
 #include "avr/wdt.h"
 
@@ -88,10 +89,10 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 // uncomment #define below according the hardware
 
 //#define WITH_BINARY_0       PIN_IO_0  //              Switch on IO0
-#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
-#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
+//#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
+//#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
 
-//#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
+#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
 //#define WITH_TEMP_0         T_TMP36   //  > 1 of 3    TMP36 on IO0
 //#define WITH_TEMP_0         T_LM35    // /            LM35 on IO0
 //#define WITH_TEMP_1         PIN_IO_1  //              Thermistor on IO1
@@ -112,8 +113,8 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 // according with WITH_BINARYn upper
 // wake up on any change of IO (FALL, RISE)
 //#define WAKEUP_ON_IO0
-#define WAKEUP_ON_IO1
-#define WAKEUP_ON_IO2
+//#define WAKEUP_ON_IO1
+//#define WAKEUP_ON_IO2
 
 
 // RadioLink IDs
@@ -127,6 +128,7 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 
 RadioLinkClass RLcomm;
 bool LoraOK = false;
+uint8_t sensorID = SENSOR_ID;
 
 #include "MLsensor.hpp"
 uint16_t mVCC = 3700; // 3.7v
@@ -159,6 +161,7 @@ uint16_t WDTcount = 0;
 
 // LoRa frequency
 const uint32_t LRfreq = 433;
+const uint8_t  LRrange = 0;
 
 ISR(WDT_vect)
 {
@@ -170,10 +173,34 @@ ISR(PCINT0_vect)
   GIFR = 0;
   WDTcount = 0x7FFF; // overflow wdt counter
 }
-
+/*
+#define I2C_CODER_ADDRESS 0x7C // the 7-bit address
+uint8_t detectCoder()
+{
+  // Detect Codeur
+  bool changed = false;
+  TinyWireM.begin();
+  TinyWireM.beginTransmission(I2C_CODER_ADDRESS);
+  if (TinyWireM.endTransmission() == 0)
+  {
+    DEBUGln("Codeur détecté");
+    TinyWireM.requestFrom(I2C_CODER_ADDRESS, 1);
+    if (TinyWireM.available())
+    {
+      uint8_t c = TinyWireM.read();
+      if (c > 0x00 && c < 0xFF && c != sensorID)
+      {
+        return c;
+      }
+    }
+  }
+  return 0;
+}
+*/
 // initial setup
 void setup()
 {
+  bool needConfig = false;
   LED_INIT;
   LED_ON;
   DEBUGinit();
@@ -186,8 +213,21 @@ void setup()
   pinMode(PIN_VL33_DRV, OUTPUT);
   digitalWrite(PIN_VL33_DRV, DRVON);
   delay(100);
-
   DEBUGln(F("\nStart"));
+
+  /*if (detectCoder())
+  {
+    
+  }*/
+
+  // RST pin form LoRa module is used to active "send config"
+  pinMode(RL_DEFAULT_RESET_PIN, INPUT_PULLUP);
+  while (digitalRead(RL_DEFAULT_RESET_PIN) == 0)
+  {
+    delay(300); LED_OFF; delay(300); LED_ON;
+    needConfig = true;
+  }
+  pinMode(RL_DEFAULT_RESET_PIN, OUTPUT);
 
   if (startLoRa())
   {
@@ -199,39 +239,31 @@ void setup()
   ML_addSensor(new VCC(CHILD_ID_VBAT));
 
 #ifdef WITH_BINARY_0
-#ifdef WAKEUP_ON_IO0
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT1, WITH_BINARY_0, true));  // Trigger
-#else
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT1, WITH_BINARY_0));        // Binary sensor
-#endif
+  // You can choose mode: Binary_Sensor, Trigger_On_Rise, Trigger_On_Fall, Trigger_Any
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT1, WITH_BINARY_0, Binary_Sensor));
 #endif
 
 #ifdef WITH_BINARY_1
-#ifdef WAKEUP_ON_IO1
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT2, WITH_BINARY_1, true));
-#else
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT2, WITH_BINARY_1));
-#endif
+  // You can choose mode: Binary_Sensor, Trigger_On_Rize, Trigger_On_Fall, Trigger_Any
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT2, WITH_BINARY_1, Binary_Sensor));
 #endif
 
 #ifdef WITH_BINARY_2
-#ifdef WAKEUP_ON_IO2
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT3, WITH_BINARY_2, true));
-#else
-  ML_addSensor(new BinaryIO(CHILD_ID_INPUT3, WITH_BINARY_2));
-#endif
+  // You can choose mode: Binary_Sensor, Trigger_On_Rize, Trigger_On_Fall, Trigger_Any
+  ML_addSensor(new BinaryIO(CHILD_ID_INPUT3, WITH_BINARY_2, Binary_Sensor));
 #endif
 
 #ifdef WITH_TEMP_0
-  ML_addSensor(new Temperature(CHILD_ID_INPUT1, WITH_TEMP_0, 3.0));
+  // You can choose the delta (eg 0.3°) change from old to new measure, to send data (it prevent consumption)
+  ML_addSensor(new Temperature(CHILD_ID_INPUT1, WITH_TEMP_0, 0.3, 3950, 1000, 5000));
 #endif
 
 #ifdef WITH_TEMP_1
-  ML_addSensor(new Temperature(CHILD_ID_INPUT2, WITH_TEMP_1, 3.0));
+  ML_addSensor(new Temperature(CHILD_ID_INPUT2, WITH_TEMP_1, 0.3, 3950, 1000, 10000));
 #endif
 
 #ifdef WITH_TEMP_2
-  ML_addSensor(new Temperature(CHILD_ID_INPUT3, WITH_TEMP_2, 3.0));
+  ML_addSensor(new Temperature(CHILD_ID_INPUT3, WITH_TEMP_2, 0.3, 3435, 1000, 10000));
 #endif
 
 #ifdef WITH_PHOTO_0
@@ -264,7 +296,10 @@ void setup()
 
   ML_begin();
   // publish all sensors configuration (only for LoRa HUB)
-  ML_PublishConfigSensors();
+  if (needConfig)
+  {
+    ML_PublishConfigSensors();
+  }
 }
 
 void loop()
@@ -275,7 +310,12 @@ void loop()
 
 bool startLoRa()
 {
-  LoraOK = RLcomm.begin(LRfreq * 1E6, NULL, NULL, 15);
+  // the data below may be different depending on the antenna or environment
+  // range: 3 = 1484 ms  1500 m / 4 floor
+  //      : 2 = 660 ms    800 m / 3 floor
+  //      : 1 = 186 ms    400 m / 2 floor
+  //      : 0 = 27 ms     200 m / 1 floor
+  LoraOK = RLcomm.begin(LRfreq * 1E6, NULL, NULL, 16, LRrange);
   if (LoraOK)
   {
     RLcomm.setWaitOnTx(true);

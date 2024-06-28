@@ -10,16 +10,16 @@ class Ultrasonic : public MLsensor
     Ultrasonic(uint8_t childID, uint16_t delta) : MLsensor(childID, delta) {
       _oldDistance = -1;
       // mandatory
-      _deviceType = rl_device_t::S_NUMERICSENSOR;
-      _dataType = rl_data_t::V_NUM;
+      _deviceType = rl_element_t::E_NUMERICSENSOR;
+      _dataType = rl_data_t::D_NUM;
     }
     void begin () override {
       pinMode(PIN_IO_1, OUTPUT);
       pinMode(PIN_IO_2, INPUT);
     }
-    // Send lora packet if Delta measured since last sent
-    // Return Distance sent (or false if not Delsta)
     uint32_t Send() override {
+      uint8_t force = --_forceRefresh <= 0;
+      
       // make 10µs pulse on ouput pulse pin
       digitalWrite(PIN_IO_1, LOW);
       delayMicroseconds(5);
@@ -32,14 +32,15 @@ class Ultrasonic : public MLsensor
       int distance_mm = (float)duration * (340. / 1000.) / 2.;
 
       // it is possible to use Kalman filter if there is
-      // too much difference between 2 measure
+      // too much difference between 2 measures
       //distance = _KalmanUS.update( distance );
       
-      if (abs(distance_mm - _oldDistance) > _delta)
+      if (abs(distance_mm - _oldDistance) > _delta || force)
       {
         _oldDistance = distance_mm;
         DEBUG(F(" >Dist")); DEBUGln(distance_mm);
         publishNum(distance_mm);
+        _forceRefresh = FORCE_REFRESH_COUNT;
         return distance_mm;
       }
       return false;

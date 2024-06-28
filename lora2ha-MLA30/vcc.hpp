@@ -5,19 +5,21 @@ class VCC : public MLsensor
     VCC(uint8_t childID) : MLsensor(childID, 5) {
       oldvBat = 0;
       // mandatory
-      _deviceType = rl_device_t::S_NUMERICSENSOR;
-      _dataType = rl_data_t::V_FLOAT;
+      _deviceType = rl_element_t::E_NUMERICSENSOR;
+      _dataType = rl_data_t::D_FLOAT;
     }
     void begin() override {
     }
     uint32_t Send() override
     {
+      uint8_t force = --_forceRefresh <= 0;
       mVCC = readVcc();
-      if (abs(mVCC - oldvBat) > _delta)
+      if (abs(mVCC - oldvBat) > _delta || force)
       {
         oldvBat = mVCC;
         DEBUG(F(" >Vcc")); DEBUGln(mVCC);
-        publishFloat(mVCC, 1000, 1);
+        publishFloat(mVCC, 1000);
+        _forceRefresh = FORCE_REFRESH_COUNT;
       }
       return mVCC;
     }
@@ -25,7 +27,18 @@ class VCC : public MLsensor
     // Measure internal VCC
     uint16_t readVcc() {
       long result;
-      uint8_t saveADMUX = ADMUX;
+      uint8_t saveADMUX;
+#if MEGATINYCORE_SERIES==1
+      saveADMUX = getAnalogReference();
+      analogReference(VDD);
+      VREF.CTRLA = VREF_ADC0REFSEL_1V5_gc;
+      delay(2);
+      uint16_t reading = analogRead(ADC_INTREF);
+      reading = analogRead(ADC_INTREF);
+      uint32_t intermediate = 1023UL * 1500;
+      result = intermediate / reading;
+      analogReference(saveADMUX);
+#else      
       // Read 1.1V reference against AVcc
       // set the reference to Vcc and the measurement to the internal 1.1V reference
 #if defined(__AVR_ATmega32U4__) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__)
@@ -44,6 +57,7 @@ class VCC : public MLsensor
         result = 1100L * 1023L / result; // Back-calculate AVcc in mV
       }
       ADMUX = saveADMUX;
+#endif
       delay(2); // Wait for Vref to settle
       return result;
     }

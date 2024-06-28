@@ -20,30 +20,30 @@ class Weight : public MLsensor {
   public:
     Weight(uint8_t childID, uint8_t pin, uint16_t delta) : MLsensor(childID, delta) {
       _pin = pin;
-      _oldWeight = 0;
+      _oldWeight = -999;
       // mandatory
-      _deviceType = rl_device_t::S_NUMERICSENSOR;
-      _dataType = rl_data_t::V_FLOAT;
+      _deviceType = rl_element_t::E_NUMERICSENSOR;
+      _dataType = rl_data_t::D_FLOAT;
     }
-    virtual void begin() override {
-      // sensor must be defined in previous included .hpp
+    void begin() override {
+      // Wsensor must be defined in previous included .hpp
       Wsensor.begin();
     }
-    // Send lora packet if Delta (g) measured since last sent
-    // Return Weight sent (or false if not Delta)
     uint32_t Send() override {
-      int32_t weight;
-      weight = Wsensor.readData(500); // 500ms timeout
-      if ((weight > 0) && (abs(weight - _oldWeight) > _delta))
+      uint8_t force = --_forceRefresh <= 0;
+
+      int32_t weight = Wsensor.readData(500); // 500ms timeout
+      if (abs(weight - _oldWeight) > _delta || force)
       {
         _oldWeight = weight;
         DEBUG(F(" >Weight")); DEBUGln(weight);
-        publishFloat(weight, 1000, 1);
+        publishFloat(weight, 1000);
+        _forceRefresh = FORCE_REFRESH_COUNT;
         return weight;
       }
       return false;
     }
   protected:
     uint8_t _pin;
-    uint32_t _oldWeight; // gramme
+    int32_t _oldWeight; // gramme
 };

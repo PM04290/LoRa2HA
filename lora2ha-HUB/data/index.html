@@ -68,6 +68,19 @@
 						</label>
 					</div>
 				</article>
+				<article>
+					<header>NTP <small>(Updated once a day)</small></header>
+					<div class="grid">
+						<label for="tz">
+							Time zone <a href="https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv"  target="_blank" style="font-size: 80%">(list here)</a>
+							<input type="text" id="tz" name="tz" placeholder="TZ" value="%TZ%">
+						</label>
+						<label for="ntp">
+							NTP server <a href="https://www.ntppool.org" target="_blank" style="font-size: 80%">(list on NTP project)</a>
+							<input type="text" id="ntp" name="ntp" placeholder="NTP address" value="%NTP%">
+						</label>
+					</div>
+				</article>
 				<ins style="position:absolute;opacity:0" id="resultwifi"><strong>Done!</strong></ins>
 				<button type="submit" class="secondary">Save</button>
 			</form>
@@ -203,8 +216,8 @@
 		</datalist>
 		<datalist id="unitlist">
 		</datalist>
-	</main>
-	<script>
+		</main>
+		<script>
 		window.addEventListener('load', onLoad);
 	</script>
 </body>																																	

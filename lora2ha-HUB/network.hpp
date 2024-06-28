@@ -1,7 +1,8 @@
 #pragma once
-#include <ESPAsyncWebServer.h>
 #include <ESPmDNS.h>
 #include <Update.h>
+#include <Update.h>
+#include "time.h"
 
 #ifdef USE_ETHERNET
 #include <ETH.h>
@@ -116,6 +117,7 @@ void WiFiEvent(WiFiEvent_t event)
       DEBUG("STA IP address: ");
       DEBUGln(WiFi.localIP());
       wifiOK1time = true;
+      hub.MQTTconnect();
       break;
     case ARDUINO_EVENT_WIFI_STA_LOST_IP:
       DEBUGln("STA Lost IP");
@@ -188,6 +190,7 @@ void WiFiEvent(WiFiEvent_t event)
       DEBUG(ETH.linkSpeed());
       DEBUGln("Mbps");
       eth_connected = true;
+      hub.MQTTconnect();
       break;
 #endif
     default:
@@ -200,12 +203,13 @@ String getHTMLforDevice(uint8_t d, Device* dev)
 {
   String blocD = html_device;
   String replaceGen = "";
-  blocD.replace("#D#", String(d));
+  String replaceFooter = "";
   blocD.replace("%DEVCOUNT%", String(d + 1));
   if (dev != nullptr)
   {
     blocD.replace("%CNFADDRESS%", String(dev->getAddress()));
     blocD.replace("%CNFNAME%", String(dev->getName()));
+    blocD.replace("%CNFMODEL%", String(dev->getModel()));
     blocD.replace("%CNFNAMEVALID%",  strlen(dev->getName()) == 0 ? "aria-invalid='true'" : String(dev->getName()));
     blocD.replace("%CNFRLVERSION%",  String(dev->getRLversion()));
     //
@@ -213,15 +217,24 @@ String getHTMLforDevice(uint8_t d, Device* dev)
     {
       replaceGen += "<div id='conf_child_" + String(d) + "_" + String(c) + "' class='row'>Loading...</div>\n";
     }
+    if (dev->isConfLoading() == false) {
+      replaceFooter = String(html_device_footer_ackdevice);
+    } else {
+      replaceFooter = String(html_device_footer_add);
+    }
   } else {
     blocD.replace("%CNFADDRESS%", "");
     blocD.replace("%CNFNAME%",  "");
+    blocD.replace("%CNFMODEL%",  "");
     blocD.replace("%CNFNAMEVALID%",  "aria-invalid='true'");
     blocD.replace("%CNFRLVERSION%",  "0");
     replaceGen += "<div id='conf_child_" + String(d) + "_0' class='row'>Loading...</div>\n";
+    replaceFooter = String(html_device_footer_add);
   }
   //
   blocD.replace("%GENCHILDS%", replaceGen);
+  blocD.replace("%GENFOOTER%", replaceFooter);
+  blocD.replace("#D#", String(d));
   return blocD;
 }
 
@@ -240,28 +253,64 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
       kcnf = "%CNFC_D" + String(n) + "%";
       blocC.replace(kcnf, (int)ch->getDataType() == n ? "selected" : "");
     }
-    const char* sensortype[12] = {"Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Custom", "Tag", "Text"};
-    blocC.replace("%CNFC_STYPE_INT%", String((int)ch->getSensorType()));
-    blocC.replace("%CNFC_STYPE_STR%", sensortype[(int)ch->getSensorType()]);
-    switch ((int)ch->getSensorType())
+    const char* elementtype[14] = {"Binary sensor", "Numeric sensor", "Switch", "Light", "Cover", "Fan", "HVac", "Select", "Trigger", "Event", "Tag", "Text", "Input", "Custom"};
+    blocC.replace("%CNFC_STYPE_INT%", String((int)ch->getElementType()));
+    blocC.replace("%CNFC_STYPE_STR%", elementtype[(int)ch->getElementType()]);
+    switch (ch->getElementType())
     {
-      case 0:
+      case E_BINARYSENSOR:
         blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
         blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
         blocC.replace("%CNFC_UNIT%", "");
         blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_OPT%", "");
+        blocC.replace("%CNFC_IMIN%", "");
+        blocC.replace("%CNFC_IMAX%", "");
+        blocC.replace("%CNFC_IDIV%", "");
         blocC.replace("%CNFC_MINI%", "");
         blocC.replace("%CNFC_MAXI%", "");
         blocC.replace("%CNFC_CA%", "");
         blocC.replace("%CNFC_CB%", "");
         break;
-      case 1:
+      case E_NUMERICSENSOR:
         blocC.replace("%CNFC_CLASS%", String(ch->getClass()));
         blocC.replace("%CNFC_CATEGORY%", String((int)ch->getCategory()));
         blocC.replace("%CNFC_UNIT%", String(ch->getUnit()));
         blocC.replace("%CNFC_EXPIRE%", String(ch->getExpire()));
+        blocC.replace("%CNFC_OPT%", "");
+        blocC.replace("%CNFC_IMIN%", "");
+        blocC.replace("%CNFC_IMAX%", "");
+        blocC.replace("%CNFC_IDIV%", "");
         blocC.replace("%CNFC_MINI%", ch->getMini() == LONG_MIN ? "" : String(ch->getMini()));
         blocC.replace("%CNFC_MAXI%", ch->getMaxi() == LONG_MAX ? "" : String(ch->getMaxi()));
+        blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
+        blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
+        break;
+      case E_SELECT:
+        blocC.replace("%CNFC_CLASS%", "");
+        blocC.replace("%CNFC_CATEGORY%", "");
+        blocC.replace("%CNFC_UNIT%", "");
+        blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_OPT%", String(ch->getSelectOptions()));
+        blocC.replace("%CNFC_IMIN%", "");
+        blocC.replace("%CNFC_IMAX%", "");
+        blocC.replace("%CNFC_IDIV%", "");
+        blocC.replace("%CNFC_MINI%", "");
+        blocC.replace("%CNFC_MAXI%", "");
+        blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
+        blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
+        break;
+      case E_INPUTNUMBER:
+        blocC.replace("%CNFC_CLASS%", "");
+        blocC.replace("%CNFC_CATEGORY%", "");
+        blocC.replace("%CNFC_UNIT%", "");
+        blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_OPT%", "");
+        blocC.replace("%CNFC_IMIN%", String(ch->getNumberMin()));
+        blocC.replace("%CNFC_IMAX%", String(ch->getNumberMax()));
+        blocC.replace("%CNFC_IDIV%", String(ch->getNumberDiv()));
+        blocC.replace("%CNFC_MINI%", "");
+        blocC.replace("%CNFC_MAXI%", "");
         blocC.replace("%CNFC_CA%", String(ch->getCoefA()));
         blocC.replace("%CNFC_CB%", String(ch->getCoefB()));
         break;
@@ -270,6 +319,10 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
         blocC.replace("%CNFC_CATEGORY%", "");
         blocC.replace("%CNFC_UNIT%", "");
         blocC.replace("%CNFC_EXPIRE%", "");
+        blocC.replace("%CNFC_OPT%", "");
+        blocC.replace("%CNFC_IMIN%", "");
+        blocC.replace("%CNFC_IMAX%", "");
+        blocC.replace("%CNFC_IDIV%", "");
         blocC.replace("%CNFC_MINI%", "");
         blocC.replace("%CNFC_MAXI%", "");
         blocC.replace("%CNFC_CA%", "");
@@ -290,6 +343,9 @@ String getHTMLforChild(uint8_t d, uint8_t c, Child* ch)
     blocC.replace("%CNFC_CATEGORY%", "");
     blocC.replace("%CNFC_UNIT%", "");
     blocC.replace("%CNFC_EXPIRE%", "");
+    blocC.replace("%CNFC_OPT%", "");
+    blocC.replace("%CNFC_IMIN%", "");
+    blocC.replace("%CNFC_IMAX%", "");
     blocC.replace("%CNFC_MINI%", "");
     blocC.replace("%CNFC_MAXI%", "");
     blocC.replace("%CNFC_CA%", "");
@@ -365,6 +421,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT)
   {
+    bool needreload = false;
     String js;
     data[len] = 0;
     DEBUGln((char*)data);
@@ -386,6 +443,8 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
       js = "";
       serializeJson(docJson, js);
       ws.textAll(js);
+      //
+      needreload = true;
     }
     if (cmd == "addchild")
     {
@@ -397,12 +456,20 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
       js = "";
       serializeJson(docJson, js);
       ws.textAll(js);
+      //
+      needreload = true;
+    }
+    if (cmd == "ackdevice")
+    {
+      DEBUGf("ackdevice : %s\n", val);
     }
     if (cmd == "logpacket")
     {
       logPacket = (val == "1");
     }
-    ws.textAll("{\"cmd\":\"loadselect\"}");
+    if (needreload) {
+      ws.textAll("{\"cmd\":\"loadselect\"}");
+    }
     return;
   }
 }
@@ -453,6 +520,8 @@ void onIndexRequest(AsyncWebServerRequest *request)
         html.replace("%MQTTHOST%", mqtt_host);
         html.replace("%MQTTUSER%", mqtt_user);
         html.replace("%MQTTPASS%", mqtt_pass);
+        html.replace("%TZ%", datetimeTZ);
+        html.replace("%NTP%", datetimeNTP);
         html.replace("%VERSION%", VERSION);
       }
       response->print(html);
@@ -501,7 +570,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
             Jconfig[valdev][keydev.toInt()][attrdev] = sval.toInt();
           } else if (isValidFloat(sval))
           {
-            Jconfig[valdev][keydev.toInt()][attrdev] = sval.toFloat();
+            Jconfig[valdev][keydev.toInt()][attrdev] = serialized(String(sval.toFloat(), 3));
           } else
           {
             Jconfig[valdev][keydev.toInt()][attrdev] = sval;
@@ -517,7 +586,7 @@ void onConfigRequest(AsyncWebServerRequest * request)
             Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toInt();
           } else if (isValidFloat(sval))
           {
-            Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval.toFloat();
+            Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = serialized(String(sval.toFloat(), 3));
           } else
           {
             Jconfig[valdev][keydev.toInt()][attrdev][keychild.toInt()][attrchild] = sval;
@@ -559,6 +628,8 @@ void onConfigRequest(AsyncWebServerRequest * request)
     strcpy(mqtt_host, request->getParam("mqtthost", true)->value().c_str() );
     strcpy(mqtt_user, request->getParam("mqttuser", true)->value().c_str() );
     strcpy(mqtt_pass, request->getParam("mqttpass", true)->value().c_str() );
+    strcpy(datetimeTZ, request->getParam("tz", true)->value().c_str() );
+    strcpy(datetimeNTP, request->getParam("ntp", true)->value().c_str() );
     if (request->hasParam("cnffreq", true))
     {
       RadioFreq = request->getParam("cnffreq", true)->value().toInt();
@@ -571,6 +642,8 @@ void onConfigRequest(AsyncWebServerRequest * request)
     DEBUGln(mqtt_user);
     DEBUGln(mqtt_pass);
     DEBUGln(RadioFreq);
+    DEBUGln(datetimeTZ);
+    DEBUGln(datetimeNTP);
 
     EEPROM.writeChar(EEPROM_DATA_CODE, AP_ssid[7]);
     EEPROM.writeUShort(EEPROM_DATA_FREQ, RadioFreq);
@@ -579,6 +652,8 @@ void onConfigRequest(AsyncWebServerRequest * request)
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 2), mqtt_host);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 3), mqtt_user);
     EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 4), mqtt_pass);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 5), datetimeTZ);
+    EEPROM.writeString(EEPROM_TEXT_OFFSET + (EEPROM_TEXT_SIZE * 6), datetimeNTP);
     EEPROM.commit();
   }
 
@@ -712,20 +787,18 @@ uint8_t getWMODE()
   if (ethOK || (wm > 125 && wm < 3970)) {  //  Ethernet from 0.1 to 3.2v or LINK
     wmode = Mode_Ethernet;
     DEBUGln("WMode : Ethernet");
-  } else
-  if (wm < 125) {                          // AP under 0.1v
+  } else if (wm < 125) {                         // AP under 0.1v
     wmode = Mode_WifiAP;
     DEBUGln("WMode : Wifi AP");
   } else {                                 // STA up to 3.2v
     DEBUGln("WMode : Wifi STA");
   }
 #else
-  DEBUGf("pin %d : %d\n", PIN_WMODE, digitalRead(PIN_WMODE));
   if (digitalRead(PIN_WMODE) == LOW || strlen(Wifi_ssid) == 0) {
     wmode = Mode_WifiAP;
-    DEBUGln("WMode : Wifi AP");
+    DEBUGf("WMode : Wifi AP\n");
   } else {
-    DEBUGln("WMode : Wifi STA");
+    DEBUGf("WMode : Wifi STA\n");
   }
 #endif
   return wmode;
@@ -767,8 +840,15 @@ void startWifiAP()
   DEBUG("AP IP Address: "); DEBUGln(WiFi.softAPIP());
 }
 
+bool getNTP(int &h, int &m, int &s)
+{
+  //if (!wifiok) return false;
+  return true;
+}
+
 void initNetwork()
 {
+
   WiFi.onEvent(WiFiEvent);
 
 #ifdef PIN_ETH_LINK

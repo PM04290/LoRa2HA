@@ -1,27 +1,31 @@
 //
-#define BETA        3000   // coef beta
-#define RESISTOR    4700   // reference resistor
-#define R_REF       5000   // thermistor value
+//#define BETA        3000   // coef beta
+//#define RESISTOR    4700   // reference resistor
+//#define R_REF       5000   // thermistor value
 #define T_REF       298.15 // nominal temperature (Kelvin) (25°)
 // coef calculator if unknown : https://www.thinksrs.com/downloads/programs/Therm%20Calc/NTCCalibrator/NTCcalculator.htm
 
 class Temperature : public MLsensor
 {
   public:
-    Temperature(uint8_t childID, uint8_t pin, float delta) : MLsensor(childID, delta * 10) {
-      _oldTemp = -99;
+    Temperature(uint8_t childID, uint8_t pin, float delta, uint16_t beta, uint32_t res, uint32_t therm) : MLsensor(childID, delta * 10) {
+      _oldTemp = -999;
       _pin = pin;
+      _Beta = beta;
+      _Resistor = res;
+      _Thermistor = therm;
       // mandatory
-      _deviceType = rl_device_t::S_NUMERICSENSOR;
-      _dataType = rl_data_t::V_FLOAT;
+      _deviceType = rl_element_t::E_NUMERICSENSOR;
+      _dataType = rl_data_t::D_FLOAT;
       if (_pin <= PIN_IO_2) {
         pinMode(_pin, INPUT);
       }
     }
-    virtual void begin() override {
+    void begin() override {
     }
-    virtual uint32_t Send()
+    uint32_t Send() override
     {
+      uint8_t force = --_forceRefresh <= 0;
       uint16_t ADCtemperature;
       if (_pin == T_TMP36 || _pin == T_LM35) {
         ADCtemperature = analogRead(PIN_IO_0);
@@ -29,11 +33,13 @@ class Temperature : public MLsensor
         ADCtemperature = analogRead(_pin);
       }
       int16_t valTemp = calcTemperature(ADCtemperature) * 10.0; // 1/10°
-      if (abs(valTemp - _oldTemp) > _delta)
+      DEBUG(_forceRefresh); DEBUG(" "); DEBUGln(valTemp);
+      if (abs(valTemp - _oldTemp) > _delta || force)
       {
         _oldTemp = valTemp;
         DEBUG(F(" >Temp")); DEBUGln(valTemp);
-        publishFloat(valTemp, 10, 1);
+        publishFloat(valTemp, 10);
+        _forceRefresh = FORCE_REFRESH_COUNT;
         return valTemp;
       }
       return false;
@@ -42,14 +48,15 @@ class Temperature : public MLsensor
     float calcTemperature(long adc)
     {
       float celcius = NAN;
-      long VIO = min(3300, mVCC);
       if (_pin <= PIN_IO_2) {
         // ! formula with NTC on GND
-        long mvNTC = (adc * mVCC) / 1023L;
-        float R_NTC = (float)RESISTOR * mvNTC / (VIO - mvNTC);
-        float ln_NTC = log(R_NTC / R_REF);
-        float kelvin = 1.0 / (1.0 / T_REF + (1.0 / BETA) * ln_NTC);
-        celcius = kelvin - 273.15;
+        float R_NTC = _Resistor / (1023. / (float)adc - 1.);
+        celcius = R_NTC / _Thermistor;
+        celcius = log(celcius);
+        celcius /= _Beta;
+        celcius += 1.0 / T_REF;
+        celcius = 1.0 / celcius;
+        celcius -= 273.15;
       }
       if (_pin == T_TMP36) {
         uint32_t mvTemp = (adc * mVCC) / 1023L;
@@ -65,4 +72,7 @@ class Temperature : public MLsensor
   private:
     uint8_t _pin;
     int16_t _oldTemp;
+    uint16_t _Beta;
+    float _Resistor;
+    float _Thermistor;
 };

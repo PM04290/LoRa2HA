@@ -10,6 +10,10 @@ const char html_device[] PROGMEM = R"rawliteral(
     Name
     <input type="text" name="dev_#D#_name" value="%CNFNAME%" %CNFNAMEVALID% >
   </label>
+  <label class="col-lg-2">
+    Model
+    <input type="text" name="dev_#D#_model" value="%CNFMODEL%">
+  </label>
   <label class="col-lg-1">
     RL ver
     <input type="number" min="0" max="4" name="dev_#D#_rlversion" value="%CNFRLVERSION%">
@@ -23,11 +27,19 @@ const char html_device[] PROGMEM = R"rawliteral(
 </div>
 %GENCHILDS%
 <footer id="footer_%DEVCOUNT%">
-  <span class="offset-10 col-2 row">
-  <button type="button" class="primary" id="newchild_#D#" onclick="addchild(this)">Add child</button>
-  </span>
+%GENFOOTER%
 </footer>
 </article>
+)rawliteral";
+
+const char html_device_footer_add[] PROGMEM = R"rawliteral(
+<span class="offset-10 col-2 row">
+<button type="button" class="primary" id="newchild_#D#" onclick="addchild(this)">Add child</button>
+</span>
+)rawliteral";
+
+const char html_device_footer_ackdevice[] PROGMEM = R"rawliteral(
+<span class="offset-9 col-3 row"></span>
 )rawliteral";
 
 const char html_child[] PROGMEM = R"rawliteral(
@@ -53,6 +65,10 @@ const char html_child[] PROGMEM = R"rawliteral(
     <input type="hidden" name="dev_#D#_childs_#C#_category" value="%CNFC_CATEGORY%">
     <input type="hidden" name="dev_#D#_childs_#C#_unit" value="%CNFC_UNIT%">
     <input type="hidden" name="dev_#D#_childs_#C#_expire" value="%CNFC_EXPIRE%">
+    <input type="hidden" name="dev_#D#_childs_#C#_options" value="%CNFC_OPT%">
+    <input type="hidden" name="dev_#D#_childs_#C#_imin" value="%CNFC_IMIN%">
+    <input type="hidden" name="dev_#D#_childs_#C#_imax" value="%CNFC_IMAX%">
+    <input type="hidden" name="dev_#D#_childs_#C#_idiv" value="%CNFC_IDIV%">
     <input type="hidden" name="dev_#D#_childs_#C#_min" value="%CNFC_MINI%">
     <input type="hidden" name="dev_#D#_childs_#C#_max" value="%CNFC_MAXI%">
     <input type="hidden" name="dev_#D#_childs_#C#_coefa" value="%CNFC_CA%">

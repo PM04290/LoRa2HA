@@ -1,5 +1,7 @@
 /*
-  Version 1.0
+  Version 2.0
+  PCB MLD21 : V 1.3
+
   PIN config ATTiny84 (internal oscillator 1 or 8MHz)
 
   ##########################################
@@ -35,7 +37,7 @@
 #define PIN_RELAY       7
 
 //--- debug tools ---
-//#define DEBUG_LED
+#define DEBUG_LED
 
 #ifdef DEBUG_LED
 #define PIN_DEBUG_LED  10
@@ -64,8 +66,7 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 
 // RadioLink
 #define HUB_ID          0 // HUB ID
-#define SENSOR_ID      20 // module ID
-#define CHILD_PARAM  0xFF // config ID
+#define SENSOR_ID      21 // module ID
 #define CHILD_ID_IO0    1 // sensor on IO0
 #define CHILD_ID_IO1    2 // sensor on IO1
 #define CHILD_RELAY_ID  3 // relay
@@ -89,7 +90,16 @@ const uint32_t LRfreq = 433;
 
 void setup()
 {
+  bool needConfig = false;
   LED_INIT;
+  // RST pin form LoRa modue is used to active "send config"
+  pinMode(RL_DEFAULT_RESET_PIN, INPUT);
+  while (analogRead(RL_DEFAULT_RESET_PIN) < 100)
+  {
+    LED_ON; delay(300);
+    LED_OFF; delay(300);
+    needConfig = true;
+  }
   LED_ON;
   DEBUGinit();
 
@@ -105,6 +115,34 @@ void setup()
   {
     RLcomm.setWaitOnTx(true);
     DEBUGln("LoRa OK");
+
+    if (needConfig)
+    {
+      // publish config
+      rl_configs_t cnf;
+      memset(&cnf, 0, sizeof(cnf));
+      //
+      cnf.base.childID = CHILD_ID_IO0;
+      cnf.base.deviceType = (uint8_t)E_BINARYSENSOR;
+      cnf.base.dataType = (uint8_t)D_BOOL;
+      strcpy(cnf.base.name, "Contact");
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_BASE);
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_END);
+      //
+      cnf.base.childID = CHILD_ID_IO1;
+      cnf.base.deviceType = (uint8_t)E_NUMERICSENSOR;
+      cnf.base.dataType = (uint8_t)D_NUM;
+      strcpy(cnf.base.name, "Ring");
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_BASE);
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_END);
+      //
+      cnf.base.childID = CHILD_RELAY_ID;
+      cnf.base.deviceType = (uint8_t)E_SWITCH;
+      cnf.base.dataType = (uint8_t)D_BOOL;
+      strcpy(cnf.base.name, "Relay");
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_BASE);
+      RLcomm.publishConfig(HUB_ID, SENSOR_ID, &cnf, C_END);
+    }
   } else
   {
     DEBUGln("LoRa Error");
@@ -116,26 +154,6 @@ void setup()
     }
 #endif
   }
-
-  // publish config
-  rl_config_t cnf;
-  memset(&cnf, 0, sizeof(cnf));
-  //
-  cnf.childID = CHILD_ID_IO0;
-  cnf.deviceType = (uint8_t)S_BINARYSENSOR;
-  cnf.dataType = (uint8_t)V_BOOL;
-  RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
-  //
-  cnf.childID = CHILD_ID_IO1;
-  cnf.deviceType = (uint8_t)S_NUMERICSENSOR;
-  cnf.dataType = (uint8_t)V_NUM;
-  RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
-  //
-  cnf.childID = CHILD_RELAY_ID;
-  cnf.deviceType = (uint8_t)S_SWITCH;
-  cnf.dataType = (uint8_t)V_BOOL;
-  RLcomm.publishConfig(HUB_ID, SENSOR_ID, CHILD_PARAM, cnf);
-
   LED_OFF;
 }
 
@@ -182,7 +200,6 @@ void loop()
         IO0active = true;
         // Send IO state to H.A.
         RLcomm.publishBool(HUB_ID, SENSOR_ID, CHILD_ID_IO0, IO0active);
-        delay(100);
       }
     } else
     {
@@ -195,7 +212,6 @@ void loop()
       IO0active = false;
       // Send IO state to H.A.
       RLcomm.publishBool(HUB_ID, SENSOR_ID, CHILD_ID_IO0, IO0active);
-      delay(100);
     }
     oldIO0Time = 0;
   }
@@ -248,11 +264,6 @@ void onReceive(uint8_t len, rl_packet_t* pIn)
   // ***************************************
   if (pIn->destinationID == SENSOR_ID && pIn->senderID == HUB_ID)
   {
-    if (pIn->childID == CHILD_PARAM)
-    {
-      // soon
-      return;
-    }
     if (pIn->childID == CHILD_RELAY_ID)
     {
       // receive relay active duration (in ms) or 1

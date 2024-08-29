@@ -135,7 +135,7 @@ class HubDev {
     const char* getUniqueId();
     void MQTTconnect();
     void processMQTT();
-    void processDateTime();
+    void processDateTime(uint8_t destination);
     void publishConfig();
     void publishOnline();
     void onMessageMQTT(char* topic, char* payload);
@@ -422,9 +422,9 @@ void HubDev::onMessageMQTT(char* topic, char* payload)
   }
 }
 
-void HubDev::processDateTime()
+void HubDev::processDateTime(uint8_t destination)
 {
-  if (!newRTC) return;
+  if (destination == RL_ID_BROADCAST && !newRTC) return;
   DEBUGf("broadcast DateTime\n");
   uint8_t raw[MAX_PACKET_DATA_LEN];
   memset(raw, 0, sizeof(raw));
@@ -434,7 +434,7 @@ void HubDev::processDateTime()
   raw[3] = rtc.hour();
   raw[4] = rtc.minute();
   raw[5] = rtc.second();
-  RLcomm.publishRaw(RL_ID_BROADCAST, UIDcode, RL_ID_DATETIME, raw, MAX_PACKET_DATA_LEN);
+  RLcomm.publishRaw(destination, UIDcode, RL_ID_DATETIME, raw, MAX_PACKET_DATA_LEN);
 }
 
 //************************************************

@@ -1,6 +1,6 @@
 #pragma once
 
-#define VERSION "0.7"
+#define VERSION "0.8"
 
 #if defined(ESP32S2)
 #define PIN_WMODE 13 // MLH1
@@ -53,6 +53,7 @@ char AP_pass[9] = "12345678";  // AP WiFi password
 
 uint8_t UIDcode = 0;
 uint16_t RadioFreq = 433;
+uint8_t RadioDist = 0;
 uint8_t rstCount = 0;
 uint8_t Watchdog = DEFAULT_ONLINE_WATCHDOG;
 

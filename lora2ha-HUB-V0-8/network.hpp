@@ -405,7 +405,46 @@ void notifyLogPacket(rl_packet_t* p, int lqi)
 {
   if (ws.availableForWriteAll())
   {
-    String s = "(" + String(lqi) + ") " + String(p->destinationID) + " <= " + String(p->senderID) + ":" + String(p->childID) + " = " + String(p->data.num.value);
+    String s = "(" + String(lqi) + ") " + String(p->destinationID) + " <= " + String(p->senderID);
+    if (p->childID == RL_ID_CONFIG && (rl_element_t)(p->sensordataType >> 3) == E_CONFIG)
+    {
+      s = s + " CNF ";
+      rl_conf_t cnfIdx = (rl_conf_t)(p->sensordataType & 0x07);
+      switch (cnfIdx) {
+        case C_BASE:
+          s = s + "B ";
+          break;
+        case C_UNIT:
+          s = s + "U ";
+          break;
+        case C_OPTS:
+          s = s + "O ";
+          break;
+        case C_NUMS:
+          s = s + "N ";
+          break;
+        case C_END:
+          s = s + "E ";
+          break;
+        default:
+          s = s + "? ";
+          break;
+      }
+    } else {
+      s = s + ":" + String(p->childID) + " = ";
+      rl_data_t dt = (rl_data_t)(p->sensordataType & 0x07);
+      switch (dt) {
+        case D_TEXT:
+          s = s + String(p->data.text);
+          break;
+        case D_FLOAT:
+          s = s + String(float(p->data.num.value) / float(p->data.num.divider));
+          break;
+        default:
+          s = s + String(p->data.num.value);
+          break;
+      }
+    }
     docJson.clear();
     docJson["cmd"] = "log";
     docJson["packet"] = s;
@@ -413,6 +452,7 @@ void notifyLogPacket(rl_packet_t* p, int lqi)
     serializeJson(docJson, js);
     ws.textAll(js);
   }
+
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len)
@@ -507,6 +547,8 @@ void onIndexRequest(AsyncWebServerRequest *request)
       html = f.readStringUntil('\n') + '\n';
       if (html.indexOf('%') > 0)
       {
+
+        html.replace("%CNFDIST%", String(RadioDist));
         html.replace("%CNFCODE%", String(AP_ssid[7]));
 #ifdef USE_ETHERNET
         html.replace("%WIFIMAC%", ETH.macAddress());

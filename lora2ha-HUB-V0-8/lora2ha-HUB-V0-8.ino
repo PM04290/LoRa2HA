@@ -8,6 +8,7 @@
     - default address : 192.164.4.1 (lora2ha0.local)
 
   TODO
+    Paramétrage distance
     Ajout (ou pas) de la carte LilyGO T-Internet POE ? ?
 
 */
@@ -178,6 +179,10 @@ void processLoRa()
       {
         RLcomm.publishNum(RL_ID_PING, UIDcode, RL_ID_PING, p.lqi);
         return;
+      }
+      if (cp->childID == RL_ID_DATETIME) // from every sender, if ChildID = 0xFC (DATETIME), sender need Datetime
+      {
+        hub.processDateTime(cp->senderID);
       }
       Device* dev = hub.getDeviceById(cp->senderID);
       Child* ch = hub.getChildById(cp->senderID, cp->childID);
@@ -357,7 +362,7 @@ void setup()
     if (code >= '0' && code <= '9')
     {
       UIDcode = code - '0';
-      AP_ssid[strlen(AP_ssid)-1] = code;
+      AP_ssid[strlen(AP_ssid) - 1] = code;
       RadioFreq = EEPROM.readUShort(EEPROM_DATA_FREQ);
       if (RadioFreq == 0xFFFF) RadioFreq = 433;
       Watchdog = EEPROM.readByte(EEPROM_DATA_WDOG) % 60;
@@ -386,11 +391,11 @@ void setup()
   //          2 = 660 ms
   //          1 = 186 ms
   //          0 = 27 ms
-  uint8_t distance = 0;
-  if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 20, distance))
+  RadioDist = 1;
+  if (RLcomm.begin(RadioFreq * 1E6, onLoRaReceive, NULL, 20, RadioDist))
   {
     RLcomm.setWaitOnTx(true);
-    DEBUGf("LoRa ok at %dMHz (dist:%d)\n", RadioFreq, distance);
+    DEBUGf("LoRa ok at %dMHz (dist:%d)\n", RadioFreq, RadioDist);
   } else {
     DEBUGln("LoRa ERROR");
   }
@@ -451,7 +456,7 @@ void loop()
   }
   if (newRTC) {
     // when NTP updated, process it
-    hub.processDateTime();
+    hub.processDateTime(RL_ID_BROADCAST);
     portENTER_CRITICAL_ISR(&ntpMux);
     newRTC = false;
     portEXIT_CRITICAL_ISR(&ntpMux);

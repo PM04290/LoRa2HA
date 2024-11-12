@@ -88,11 +88,11 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 
 // uncomment #define below according the hardware
 
-//#define WITH_BINARY_0       PIN_IO_0  //              Switch on IO0
-//#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
+#define WITH_BINARY_0       PIN_IO_0  //              Switch on IO0
+#define WITH_BINARY_1       PIN_IO_1  //              Switch on IO1
 //#define WITH_BINARY_2       PIN_IO_2  //              Switch on IO2
 
-#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
+//#define WITH_TEMP_0         PIN_IO_0  // \            Thermistor on IO0
 //#define WITH_TEMP_0         T_TMP36   //  > 1 of 3    TMP36 on IO0
 //#define WITH_TEMP_0         T_LM35    // /            LM35 on IO0
 //#define WITH_TEMP_1         PIN_IO_1  //              Thermistor on IO1
@@ -112,8 +112,8 @@ SendOnlySoftwareSerial Serial(10);  // Tx pin
 // sleep mode cofiguration if IO interrupt wake up
 // according with WITH_BINARYn upper
 // wake up on any change of IO (FALL, RISE)
-//#define WAKEUP_ON_IO0
-//#define WAKEUP_ON_IO1
+#define WAKEUP_ON_IO0
+#define WAKEUP_ON_IO1
 //#define WAKEUP_ON_IO2
 
 
@@ -161,7 +161,7 @@ uint16_t WDTcount = 0;
 
 // LoRa frequency
 const uint32_t LRfreq = 433;
-const uint8_t  LRrange = 0;
+const uint8_t  LRrange = 1;
 
 ISR(WDT_vect)
 {

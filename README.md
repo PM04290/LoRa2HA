@@ -1,44 +1,15 @@
+![](https://raw.githubusercontent.com/PM04290/LoRa2HA/refs/heads/main/res/LoRa2HA-logo-200x200.png)
 # LoRa2HA
-Home Assistant gateway based on ESP32, and LoRa devices (ATTiny84, ATTiny3216, Arduino ProMicro, etc.).
 
-# Documentation
+Document version 1.0
 
-Le PDF est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/LoRa2HA/main/doc/LoRa2HA-readme.pdf)
+## 1 Introduction
+LoRa2HA permet de combler un vide dans les équipements domotique lorsque qu'il est nécéssaire de surveiller/piloter sur une longue distance, là où Wifi et Zigbee ne peuvent aller.
+Le projet propose des équipements permettant une interconnexion entre des capteurs/actionneurs très éloignés d'un serveur HomeAssistant (via MQTT), par radio en utilisant des modules LoRa.
+Le HUB, à base d'ESP32 (Wifi ou Ethernet), reçoit les données radio et les envoi vers Home Assistant (H.A.) au travers d'un serveur MQTT. Le terme de HUB sera utilisé, et non Gateway, afin de ne pas créer de confusion avec les Gateway « LoRaWan ».
 
-# Fichiers 3D
+Le projet contient les sources de tous les firmwares, les schémas des cartes, les « Gerber » afin de pouvoir les fabriquer et des fichiers 3D pour la fabrication de boîtiers.
 
-https://github.com/PM04290/LoRa2HA/tree/main/3D
+## Documentation
 
-# Modules de terrain
-
-## MLD01 (Linky ProMicro)
-
-Module Linky, avec alimentation dédiée (doc générale)
-
-## MLD02 (Linky autonome)
-
-Projet en cours dxe finalisation.
-
-## MLD03
-
-4 entrées, 2 sorties, alimentation 5 à 32 VDC
-Firmware par défaut : Gestion de piscine (hors chimie)
-Modification possible pour gestion d'arrosage
-
-([Documentation](https://raw.githubusercontent.com/PM04290/LoRa2HA/main/doc/LoRa2HA-MLD03-readme.pdf)
-
-## MLA10
-
-1 entrée contact, très longue autonomie par pile  (doc générale)
-
-## MLA30
-
-3 entrées, autonome (doc générale)
-Firmware par défaut : Gestion de boite aux lettre
-Possibilités : Comptage d'impulsion, mesure de niveau, tous capteurs analogiques, etc...
-
-## MLE21
-
-2 entrées, 1 sortie, alimentation 7 à 32 VDC (doc générale)
-multi-utilisations
-Firmware par défaut : Gestion d'un portail
+Le fichier PDF de la documentation complète est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/LoRa2HA/main/doc/LoRa2HA-readme-10.pdf)

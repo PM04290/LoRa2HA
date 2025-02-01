@@ -106,6 +106,7 @@
 			<form method='post' action='/doupdate' enctype='multipart/form-data'>
 				<article>
 					<header>Update HUB firmware %VERSION%</header>
+					<a style="float:right" href="https://github.com/PM04290/LoRa2HA/tree/main/HUBs" target="blank">GitHub</a>
 					<label for="formBinSm" class="form-label">Select .bin file to upload</label>
 					<input type="file" accept=".bin" id="formBinSm" name='update'>
 					<footer>
@@ -117,7 +118,6 @@
 			<form method='post' action='/dofile' enctype='multipart/form-data'>
 				<article>
 					<header>Send file</header>
-					<a style="float:right" href="https://github.com/PM04290/LoRa2HA/tree/main/HUBs" target="blank">GitHub</a>
 					<label for="formFileSm" class="form-label">Select file to send (config, module firmware, ...) max file name len : 25</label>
 					<input type="file" accept=".json, .html, .js, .css, .png, .hex" class="form-control form-control-sm" id="formFileSm" name='update'>
 					<footer>

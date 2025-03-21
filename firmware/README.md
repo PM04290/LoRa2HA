@@ -11,6 +11,7 @@ Firmware library for LoRa2HA module with ATtiny3216 mcu
 |MLD03_sprinkle-01|1.0|T3216|2 ways sprinkle manager
 |MLA30_mboxS-01|1.0|T3216|Mailbox with 3 magnetic sensor (NO), state in H.A
 |MLA30_mboxT-01|1.0|T3216|Mailbox with 3 magnetic sensor (NO), opening trigger in H.A
+|MLA30_ping-01|1.0|T3216|MLA30+Oled pinger for distance test
 |MLE31_gate-01|1.0|T3216|Control gate opening
 |MLE42_garage-01|1.0|T3216|Control garage door
 |MLE42_henhouse-01|1.0|T3216|Control henhouse door

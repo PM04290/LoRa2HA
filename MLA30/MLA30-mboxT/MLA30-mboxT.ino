@@ -22,9 +22,12 @@
 // (SDA)  PB1  8~ 10|_____|11  9~ PB0 (SCL)
 
 #include <Arduino.h>
-#include <RadioLink.h>
 #include <EEPROM.h>
 #include "avr/sleep.h"
+
+#define DSerial Serial
+#define DEBUG_LED
+//#define DEBUG_SERIAL
 
 //--- I/O pin ---
 #define PIN_IN1       PIN_PA5
@@ -35,17 +38,16 @@
 #define PIN_OUT2      PIN_PC0
 #define PIN_DEBUG_LED PIN_PC2
 
-#define DEBUG_LED
-//#define DEBUG_SERIAL
 
 // EEPROM dictionnary
 #define EEP_UID      0
 #define EEP_HUBID    (EEP_UID+1)
 
+#define ML_SX1278
+#include <MLiotComm.h>
 #include <MLiotElements.h>
 
 // LoRa
-extern RadioLinkClass RLcomm;
 extern uint8_t uid;
 extern uint8_t hubid;
 
@@ -147,12 +149,12 @@ void setup()
   }
   EEPROM.get(EEP_HUBID, hubid);
 
-  Analog* vcc = (Analog*)ML_addElement(new Analog(PIN_NONE, CHILD_ID_VBAT, F("Vcc"), F("V"), 0.01, 100));
+  Analog* vcc = (Analog*)deviceManager.addElement(new Analog(PIN_NONE, CHILD_ID_VBAT, F("Vcc"), F("V"), 0.01, 100));
   vcc->setParams(onAnalogVCC, 0, 0, 0);
 
-  ML_addElement(new Binary(PIN_IN1, CHILD_ID_INPUT1, F("Contact 1"), trigFall, nullptr));
-  ML_addElement(new Binary(PIN_IN2, CHILD_ID_INPUT2, F("Contact 2"), trigFall, nullptr));
-  ML_addElement(new Binary(PIN_IN3, CHILD_ID_INPUT3, F("Contact 3"), trigFall, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN1, CHILD_ID_INPUT1, F("Contact 1"), trigFall, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN2, CHILD_ID_INPUT2, F("Contact 2"), trigFall, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN3, CHILD_ID_INPUT3, F("Contact 3"), trigFall, nullptr));
 
   // activate interrupt for wake up
   attachInterrupt(digitalPinToInterrupt(PIN_IN1), onPinWakeup, CHANGE);
@@ -169,9 +171,8 @@ void setup()
   {
     if (needPairing)
     { // send painring configuration and wait acknowledge
-      uint8_t h = hubid;
       hubid = RL_ID_BROADCAST;
-      ML_PublishConfigElements(F("Mailbox"), F("MLA30"));// you can change name of device (replace "Mailbox")
+      deviceManager.publishConfigElements(F("Mailbox"), F("MLA30"));// you can change name of device (replace "Mailbox")
       pairingPending = true;
       while (pairingPending)
       { // wait for receive acknowledge from HUB (see "onReceive")
@@ -206,8 +207,8 @@ void loop()
   {
     LED_ON;
     // Walk any sensor in Module to send data
-    ML_ProcessElements();
-    ML_SendElements();
+    deviceManager.processElements();
+    deviceManager.sendElements();
     LED_OFF;
   }
   powerOff();
@@ -215,10 +216,9 @@ void loop()
 
 bool startLoRa()
 {
-  LoraOK = RLcomm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
+  LoraOK = MLiotComm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
   if (LoraOK)
   {
-    RLcomm.setWaitOnTx(true);
     DEBUGln(F("LoRa OK"));
     return true;
   } else
@@ -240,8 +240,8 @@ void powerOff()
   DEBUGln(F("sleep"));
 
   // Stop LoRa Module
-  RLcomm.sleep();
-  RLcomm.end();
+  MLiotComm.sleep();
+  MLiotComm.end();
 
   // power OFF V33
   digitalWrite(PIN_VCMD, DRVOFF);

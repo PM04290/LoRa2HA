@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<title>LoRa2HA</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="css/pico-bootstrap-grid.css">
+	<link rel="shortcut icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAADJElEQVR4nO2ZzU4UQRDH96gc5KAeVhd3q1kIFxN9FBU8qE9giFxMPC4awaVqNsaLV40+AqhHTmo06smPRDDKslVIYpCTSmDF1OwCy37NzvTM4GEqqTBhunr+v+7q7oJOpRJLLFxLF7gPiG8B8SKQbLg/kW9mSuXD/72GdIH7DPJLQ7Ld7EDyIg6ItI0GpW4XuNcBT0YNADYadKq6BqMsxACwGFiD5ptH8J/oASS4Bk96ks/RA3BwDbrSuwUblELkAGihQVe4rvQOU/c8jl0oY6uh1gFP6mJx92CUBaWO8xzIHJSGHEnWEN8A4meGhA3J77ozID/Vd6bIp1JxmNGP1d2r7aBTGTDEjw3yVtf8dXOYtwzyI41JhaihTfDeR7u1y9HKRUO87im8dTH+BFwZC0ND4GBDfM0g//Utfte5CsTjBwKgo2cnvgEC5UKsAAMzSycMyZq9eNmBWG+3JkID8ONA8tY4PGFK30+b4lq/6/rs8ASgvAvabyrsmqRFOPIqOHzZs1+UK9rWX9/ivwYzKFO9Q/DHfHE502vf7raL8qnHGd0wxLd9A3QG47mm0VnIT8nxfW1IztfbMaBUDPGsQT7X2EZjoKVw49lU1AYo5aaP0q7w4lp//cStAvI8kNx1HXlef6dQ+Xs/juyBcqlpxJciB6iXBg1TzItmZnlIXRcwEL/PYuVMc1zeqZzVd4DyRtsOlsp5QP6yDwDlV+wAzek0Ml052il22OFjbmHWKecxBoDWFGqfTtnC10O6KxnkS/rcJW22402hpkXcKZ0M8usGsFfgVIbzuDrYkjYU0SI2KNN+z4L96cDfVLSW2ID8IWg/oBpQpnwDWImvjeb9Xv9VYiI5yKzE1/I56/BI9s5KzmYGTN2tAOIo5vJtTvLIANSAZNQ9nOzFV/XkDqLBCqAGweN2EFwFkqs2GqwAahAyqn8eBgDQFGw78qEAAEpxx73aav4C8kMg3vTcUYg3gfjBUKl8MkwNoZiC5FCuA/ETIFnW0kC99sxz+s5P2R3IkgsOS0snFxzU9UhPLji8DJILDuqyjycXHN6WSS44Ekss5cf+AWDAXZProNXzAAAAAElFTkSuQmCC" />
+	<script src="js/jquery.min.js"></script>
+	<script src="js/modal.js"></script>
+	<script src="js/lora2ha.js"></script>
+</head>
+<body>
+    <main class="container">
+		<div class="headings">
+			<img src="i/logo-64.png" style="float:right">
+			<h2>LoRa2HA</h2>
+			<h3>By Matières & Lumière</h3>
+		</div>
+		<details>
+			<summary role="button">Network & Radio</summary>
+			<form action="/doconfig" id="formwifi" role="form">
+				<article>
+					<header>Module</header>
+					<div class="row">
+						<label for="cnfcode" class="col-1">
+							UID Code
+							<input type="number" id="cnfcode" name="cnfcode" min="0" max="9" value="%CNFCODE%">
+						</label>
+						<label class="col-2">
+							MAC address*
+							<input value="%WIFIMAC%" readonly>
+						</label>
+						<label for="cnffreq" class="col-2">
+							Radio Freq.
+							<input type="number" id="cnffreq" name="cnffreq" min="135" max="525" value="%CNFFREQ%">
+						</label>
+						<label for="cnfdist" class="col-1">
+							Range %LORAOK%
+							<input type="number" id="cnfdist" name="cnfdist" min="0" max="3" value="%CNFDIST%">
+						</label>
+						<i><small>*Only DHCP mode is provided (not static IP address), use DHCP server configuration to allow dedicated address.</small></i>
+					</div>
+				</article>
+				<article>
+					<header>Wifi</header>
+					<div class="grid">
+						<label for="ssid">
+							SSID
+							<input type="text" id="wifissid" name="wifissid" placeholder="Wifi SSID" value="%WIFISSID%">
+						</label>
+						<label for="password">
+							Password
+							<input type="text" id="wifipass" name="wifipass" placeholder="Wifi password" value="%WIFIPASS%">
+						</label>
+					</div>
+				</article>
+				<article>
+					<header>Mqtt</header>
+					<div class="grid">
+						<label for="mqtthost">
+							Host
+							<input type="text" id="mqtthost" name="mqtthost" placeholder="Mqtt host" value="%MQTTHOST%">
+						</label>
+						<label for="mqttuser">
+							User
+							<input type="text" id="mqttuser" name="mqttuser" placeholder="Mqtt user" value="%MQTTUSER%">
+						</label>
+						<label for="mqttuser">
+							Password
+							<input type="text" id="mqttpass" name="mqttpass" placeholder="Mqtt pass" value="%MQTTPASS%">
+						</label>
+					</div>
+					<div class="grid">
+						<label for="cnfvpn" class="col-1">
+							VPN
+							<input type="checkbox" id="cnfvpn" name="cnfvpn" />
+						</label>
+					</div>
+				</article>
+				<article>
+					<header>NTP <small>(Updated once a day)</small></header>
+					<div class="grid">
+						<label for="tz">
+							Time zone <a href="https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv"  target="_blank" style="font-size: 80%">(list here)</a>
+							<input type="text" id="tz" name="tz" placeholder="TZ" value="%TZ%">
+						</label>
+						<label for="ntp">
+							NTP server <a href="https://www.ntppool.org" target="_blank" style="font-size: 80%">(list on NTP project)</a>
+							<input type="text" id="ntp" name="ntp" placeholder="NTP address" value="%NTP%">
+						</label>
+					</div>
+				</article>
+				<ins style="position:absolute;opacity:0" id="resultwifi"><strong>Done!</strong></ins>
+				<button type="submit" class="secondary">Save</button>
+			</form>
+		</details>
+		<details>
+			<summary role="button">Devices</summary>
+				<div id="conf_dev">loading...</div>
+				<!-- -->
+				<div class="row">
+					<label class="col-2">
+						<input type="checkbox" id="selpairing" role="switch" onclick="pairing(this)" %CNFPAIR% >Pairing active
+					</label>
+					<ins class="col-3" style="opacity:0" id="resultconf"><strong>Done!</strong></ins>
+					<button type="button" class="offset-5 col-2 contrast" id="newdev" data-target="modalupl" onclick="uplmodule(event)">Upload firmware</button>
+				</div>
+				<!-- -->
+		</details>
+		<details>
+			<summary role="button">Tools</summary>
+			<form method='post' action='/doupdate' enctype='multipart/form-data'>
+				<article>
+					<header>Update HUB firmware %VERSION%</header>
+					<a style="float:right" href="https://github.com/PM04290/LoRa2HA/tree/main/HUBs" target="blank">GitHub</a>
+					<label for="formBinSm" class="form-label">Select .bin file to upload</label>
+					<input type="file" accept=".bin" id="formBinSm" name='update'>
+					<footer>
+						<ins style="position:absolute;opacity:0" id="resultfirmware"><strong>Enregistr&eacute;!</strong></ins>
+						<button type="submit" class="secondary">Update</button>
+					</footer>
+				</article>
+			</form>
+			<form method='post' action='/dofile' enctype='multipart/form-data'>
+				<article>
+					<header>Send file</header>
+					<label for="formFileSm" class="form-label">Select file to send (config, module firmware, ...) max file name len : 25</label>
+					<input type="file" accept=".json, .html, .js, .css, .png, .hex" class="form-control form-control-sm" id="formFileSm" name='update'>
+					<footer>
+						<ins style="position:absolute;opacity:0" id="resultfile"><strong>Enregistr&eacute;!</strong></ins>
+						<button type="submit" class="secondary">Send</button>
+					</footer>
+				</article>
+			</form>
+			<div class="grid">
+				<a href="/config.json" role="button" class="contrast" style="margin-bottom:2px" download>Download configuration file</a>
+				<div role="button" class="secondary outline">
+					<label for="log" data-tooltip="Display LoRa packet in console">
+						<input type="checkbox" id="logpacket" name="logpacket" role="switch" onclick="logpacket(this)">Log LoRa packet
+					</label>
+				</div>
+				<a href="/restart" role="button" class="contrast" style="margin-bottom:2px">Reset</a>
+			</div>
+		</details>
+		<!-- Modal -->
+		<dialog id="modalupl">
+			<article>
+				<header>
+					<a href="#close" aria-label="Close"	class="close" data-target="modalupl" onClick="toggleModal(event)"></a>
+					<h4>Upload firmware into device</h4>
+				</header>
+				<article style="background-color:#f8d7da">
+				📌 Check that selected firmware is compatible with target card.
+				</article>
+				<fieldset>
+					<legend>Firmware storage :</legend>
+					<input type="radio" id="uplsrcESP" name="uplsource" value="0" checked /><label htmlFor="uplsrcESP">Internal HUB</label>
+					<input type="radio" id="uplsrcGIT" name="uplsource" value="1" /><label htmlFor="uplsrcGIT">GitHub</label>
+				</fieldset>
+				<select size="6" id="upllist">
+				</select>
+				<div class="row">
+					<button type="button" id="upldel" class="col-4 secondary" onclick="upldel(event)">Delete</button>
+					<button type="button" class="offset-4 col-4 contrast" onclick="uplsend(event)">Upload</button>
+				</div>
+				<mark style="opacity:0" id="resultupload"><strong id="msgupload"></strong></mark>
+				<footer>
+					<a href="#cancel" role="button" data-target="modalupl" onClick="toggleModal(event)">Close</a>
+				</footer>
+			</article>
+		</dialog>
+		<dialog id="modalha">
+			<form id="formmodal" role="form" data-target="modalha">
+				<input type="hidden" id="modal_d">
+				<input type="hidden" id="modal_c">
+				<article>
+					<header>
+						<a href="#close" aria-label="Close"	class="close" data-target="modalha" onClick="toggleModal(event)"></a>
+						<h4>HA Configuration</h4>
+					</header>
+					<label id="ha_class">
+						Class
+						<input type="text" list="classlist" id="dev_child_class" value="">
+					</label>
+					<label id="ha_category">
+						Category
+						<select id="dev_child_category" required>
+							<option value="0">Auto/None</option>
+							<option value="1">Configuration</option>
+							<option value="2">Diagnostic</option>
+						</select>
+					</label>
+					<div id="ha_param">
+						<label>
+							Unit
+							<input type="text" list="unitlist" id="dev_child_unit" value="" class="form-select">
+						</label>
+						<label>
+							Expire after (sec, 0 = never)
+							<input type="number" id="dev_child_expire" value="">
+						</label>
+						<h3>Sensor calibration</h3>
+						<div class="grid">
+							<label class="col-8">
+								Min
+								<input type="number" id="dev_child_min" value="">
+							</label>
+							<label class="col-8">
+								Max
+								<input type="number" id="dev_child_max" value="">
+							</label>
+						</div>
+						<div class="grid">
+							<div class="row" style="margin-left: calc(var(--bs-gutter-x)*-0.1);">
+								<div class="col-7">State result = (LoRa data) * &nbsp;<input type="number" id="dev_child_coefa" value=""  style="width:40%"></div>
+								<div class="col-5"> + &nbsp;<input type="number" id="dev_child_coefb" value="" style="width:50%"></div>
+							</div>
+						</div>
+					</div>
+					<footer>
+						<a href="#cancel" role="button" data-target="modalha" onClick="toggleModal(event)">Cancel</a>
+						<a href="#confirm" role="button" data-target="modalha" class="secondary" onClick="confirmModal(event)">Confirm</a>
+					</footer>
+				</article>
+			</form>
+		</dialog>
+		<!-- -->
+		<datalist id="classlist">
+		</datalist>
+		<datalist id="unitlist">
+		</datalist>
+	</main>
+	<div id="toast" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 1rem 2rem; border-radius: 8px; text-align: center; z-index: 1000;">Done !</div>
+	<div id="floatinfo" class="outline" style="position: fixed; top: 0px; width: 100%; height: 2em; opacity:0; text-align: center; z-index: 99; background-color: darkorange; align-content: center;">
+		<h4>Pairing is active</h4>
+	</div>
+	<script>
+	window.addEventListener('load', onLoad);
+	</script>
+</body>																																	

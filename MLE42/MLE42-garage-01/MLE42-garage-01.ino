@@ -1,5 +1,5 @@
 /*
-  Version 1.0
+  Version 2.0
   PCB : MLD42 V1.0 + T3216
 
   ATTiny3216 (internal oscillator 4MHz)
@@ -19,8 +19,16 @@
 // (SDA)  PB1  8~ 10|_____|11  9~ PB0 (SCL)
 
 #include <Arduino.h>
-#include <RadioLink.h>
 #include <EEPROM.h>
+
+//--- debug tools ---
+#define DEBUG_LED
+#define DSerial Serial
+//#define DEBUG_SERIAL
+
+#define ML_SX1278
+#include <MLiotComm.h>
+#include <MLiotElements.h>
 
 // EEPROM mapping (do not change order)
 #define EEP_UID               0
@@ -34,10 +42,6 @@
 #define PIN_OUT1      PIN_PC1
 #define PIN_OUT2      PIN_PC0
 #define PIN_DEBUG_LED PIN_PC2
-
-//--- debug tools ---
-#define DEBUG_LED
-//#define DEBUG_SERIAL
 
 #ifdef DEBUG_LED
 #include <tinyNeoPixel_Static.h>
@@ -69,15 +73,12 @@ extern uint8_t uid;   // this module ID
 #define CHILD_ID_OUT2   6 // relay on OUT2 (Motor Close)
 #define CHILD_ID_TOGGLE 7 // move motor opposite
 
-extern RadioLinkClass RLcomm;
-
 bool LoraOK = false;
 const uint32_t LRfreq = 433;
 const uint8_t LRrange = 1; // 3 = 500m/1484 ms, 2 = 200m/660 ms, 1 = 100m/186 ms,  0 = 30m/27 ms
 bool needPairing = false;
 
 // MLiotElements
-#include <MLiotElements.h>
 
 Binary* ContactOpened;
 Binary* ContactClosed;
@@ -123,25 +124,23 @@ void setup()
   EEPROM.get(EEP_HUBID, hubid);
 
   // Initialisation des Elements
-  ContactOpened = (Binary*)ML_addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Opened"), stateInverted, nullptr));
-  ContactClosed = (Binary*)ML_addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
-  Detection = (Binary*)ML_addElement(new Binary(PIN_IN3, CHILD_ID_IN3, F("Detection"), stateNormal, nullptr));
+  ContactOpened = (Binary*)deviceManager.addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Opened"), stateInverted, nullptr));
+  ContactClosed = (Binary*)deviceManager.addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
+  Detection = (Binary*)deviceManager.addElement(new Binary(PIN_IN3, CHILD_ID_IN3, F("Detection"), stateNormal, nullptr));
 
-  RelayOpen = (Relay*)ML_addElement(new Relay(PIN_OUT1, CHILD_ID_OUT1, F("Open")));
-  RelayClose = (Relay*)ML_addElement(new Relay(PIN_OUT2, CHILD_ID_OUT2, F("Close")));
+  RelayOpen = (Relay*)deviceManager.addElement(new Relay(PIN_OUT1, CHILD_ID_OUT1, F("Open")));
+  RelayClose = (Relay*)deviceManager.addElement(new Relay(PIN_OUT2, CHILD_ID_OUT2, F("Close")));
 
-  Toggle = (Button*)ML_addElement(new Button(CHILD_ID_TOGGLE, F("Toggle")));
+  Toggle = (Button*)deviceManager.addElement(new Button(CHILD_ID_TOGGLE, F("Toggle")));
 
-  LoraOK = RLcomm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
+  LoraOK = MLiotComm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
   if (LoraOK)
   {
-    RLcomm.setWaitOnTx(true);
     if (needPairing)
     {
       // publish config
-      uint8_t h = hubid;
       hubid = RL_ID_BROADCAST;
-      ML_PublishConfigElements(F("Garage"), F("MLE42"));
+      deviceManager.publishConfigElements(F("Garage"), F("MLE42"));
       while (needPairing)
       {
         uint32_t tick = millis() / 3;
@@ -167,7 +166,7 @@ void setup()
 
 void loop()
 {
-  ML_ProcessElements();
+  deviceManager.processElements();
   // control opened contact
   if (RelayOpen->getBool() == true && ContactOpened->getBool() == true)
   {
@@ -178,7 +177,7 @@ void loop()
   {
     RelayClose->setValue(0);
   }
-  ML_SendElements();
+  deviceManager.sendElements();
 }
 
 void onReceive(uint8_t len, rl_packet_t* pIn)

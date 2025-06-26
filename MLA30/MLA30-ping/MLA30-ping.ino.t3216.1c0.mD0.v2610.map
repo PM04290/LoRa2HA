@@ -1,0 +1,329 @@
+
+
+Symbols from C:\Users\Admin\AppData\Local\Temp\arduino_build_322596/MLA30-ping.ino.elf:
+
+Name                  Value   Class        Type         Size     Line  Section
+
+__heap_end          |00000000|   W  |            NOTYPE|        |     |*ABS*
+__TEXT_REGION_ORIGIN__|00000000|   W  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__tmp_reg__         |00000000|   a  |            NOTYPE|        |     |*ABS*
+__vector_default    |00000000|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:61
+__vectors           |00000000|   T  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:61
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__zero_reg__        |00000001|   a  |            NOTYPE|        |     |*ABS*
+__FUSE_REGION_LENGTH__|0000000a|   A  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__CCP__             |00000034|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_L__            |0000003d|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SP_H__            |0000003e|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__SREG__            |0000003f|   a  |            NOTYPE|        |     |*ABS*
+__trampolines_end   |0000007c|   T  |            NOTYPE|        |     |.text
+__trampolines_start |0000007c|   T  |            NOTYPE|        |     |.text
+u8g2_font_7x13_mf   |0000007c|   t  |            OBJECT|00000b8c|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_fonts.c:6599
+__EEPROM_REGION_LENGTH__|00000100|   A  |            NOTYPE|        |     |*ABS*
+__LOCK_REGION_LENGTH__|00000400|   A  |            NOTYPE|        |     |*ABS*
+__SIGNATURE_REGION_LENGTH__|00000400|   A  |            NOTYPE|        |     |*ABS*
+__USER_SIGNATURE_REGION_LENGTH__|00000400|   A  |            NOTYPE|        |     |*ABS*
+__DATA_REGION_LENGTH__|00000800|   A  |            NOTYPE|        |     |*ABS*
+__ctors_start       |00000c08|   T  |            NOTYPE|        |     |.text
+__ctors_end         |00000c0a|   T  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:230
+__dtors_end         |00000c0a|   T  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:230
+__dtors_start       |00000c0a|   T  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:230
+__init              |00000c0a|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:230
+_initThreeStuff()   |00000c16|   T  |              FUNC|00000018|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/main.cpp:149
+__do_clear_bss      |00000c2e|   T  |            NOTYPE|00000010|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2441
+.do_clear_bss_loop  |00000c36|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2446
+.do_clear_bss_start |00000c38|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2448
+__do_copy_data      |00000c3e|   T  |            NOTYPE|00000016|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2409
+__do_global_ctors   |00000c54|   T  |            NOTYPE|00000016|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2466
+__bad_interrupt     |00000c72|   T  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_1          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_10         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_11         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_12         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_13         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_14         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_16         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_17         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_18         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_19         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_2          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_20         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_21         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_22         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_23         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_25         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_26         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_27         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_28         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_29         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_30         |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_6          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_7          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_8          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+__vector_9          |00000c72|   W  |            NOTYPE|        |     |.text	../../../../crt1/gcrt1.S:209
+u8x8_ascii_next     |00000c74|   t  |              FUNC|00000014|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_8x8.c:290
+u8g2_ll_hvline_vertical_top_lsb|00000c88|   t  |              FUNC|000000da|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_ll_hvline.c:72
+u8x8_dummy_cb       |00000d62|   t  |              FUNC|00000004|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_setup.c:40
+u8g2_font_calc_vref_font|00000d66|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:1227
+u8g2_SetDrawColor.constprop.43|00000d6c|   t  |              FUNC|00000008|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_hvline.c:251
+TwoWire::endTransmission() [clone .constprop.18]|00000d74|   t  |              FUNC|00000098|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/twi.c:310
+TWI_MasterSetBaud.part.3.constprop.9|00000e0c|   t  |              FUNC|0000008a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/twi.c:205
+u8x8_byte_SendBytes.constprop.3|00000e96|   t  |              FUNC|00000010|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_byte.c:44
+Print::write(unsigned char const*, unsigned int)|00000ea6|   t  |              FUNC|0000005a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore\api/Print.cpp:29
+_delayMicroseconds  |00000f00|   t  |              FUNC|00000002|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:1060
+micros              |00000f02|   t  |              FUNC|00000062|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:499
+delay               |00000f64|   t  |              FUNC|00000052|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:961
+detachInterrupt.part.1|00000fb6|   t  |              FUNC|0000006a|     |.text
+TwoWire::flush()    |00001020|   t  |              FUNC|00000010|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/twi.c:139
+TwoWire::peek()     |00001030|   t  |              FUNC|00000028|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:726
+TwoWire::read()     |00001058|   t  |              FUNC|00000024|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:635
+TwoWire::available()|0000107c|   t  |              FUNC|0000000c|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:603
+TwoWire::write(unsigned char)|00001088|   t  |              FUNC|00000024|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:536
+TwoWire::write(int) [clone .constprop.17]|000010ac|   t  |              FUNC|00000008|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.h:130
+TwoWire::write(unsigned char const*, unsigned int)|000010b4|   t  |              FUNC|00000046|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:579
+u8x8_gpio_call      |000010fa|   t  |              FUNC|0000000e|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_gpio.c:40
+u8x8_cad_EndTransfer|00001108|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:118
+u8x8_cad_StartTransfer|0000111a|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:113
+u8x8_cad_SendData   |0000112c|   t  |              FUNC|00000010|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:108
+u8x8_cad_SendSequence|0000113c|   t  |              FUNC|00000092|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:159
+u8x8_cad_SendArg    |000011ce|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:93
+u8x8_cad_SendCmd    |000011e0|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:88
+u8x8_d_ssd1306_128x64_noname|000011f2|   t  |              FUNC|00000148|     |.text
+u8x8_byte_EndTransfer|0000133a|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_byte.c:59
+u8x8_byte_StartTransfer|0000134c|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_byte.c:54
+u8x8_byte_SendByte  |0000135e|   t  |              FUNC|0000001c|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_byte.c:49
+u8x8_i2c_data_transfer|0000137a|   t  |              FUNC|00000034|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:474
+u8x8_cad_ssd13xx_fast_i2c|000013ae|   t  |              FUNC|000000c2|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_cad.c:534
+u8g2_draw_l90_r0    |00001470|   t  |              FUNC|00000020|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_setup.c:308
+u8g2_update_dimension_r0|00001490|   t  |              FUNC|000000a4|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_setup.c:213
+u8g2_IsIntersection |00001534|   t  |              FUNC|00000072|     |.text
+u8g2_update_page_win_r0|000015a6|   t  |              FUNC|0000015a|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_setup.c:218
+u8g2_DrawHVLine     |00001700|   t  |              FUNC|00000156|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_hvline.c:150
+u8g2_font_calc_vref_top|00001856|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:1248
+u8g2_add_vector_x   |00001868|   t  |              FUNC|00000032|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:316
+u8g2_add_vector_y   |0000189a|   t  |              FUNC|00000032|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:296
+u8g2_font_decode_len|000018cc|   t  |              FUNC|000000ba|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:387
+u8g2_font_decode_get_unsigned_bits|00001986|   t  |              FUNC|00000056|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:237
+u8g2_font_get_word  |000019dc|   t  |              FUNC|00000018|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:118
+u8g2_DrawGlyph      |000019f4|   t  |              FUNC|00000378|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:936
+u8g2_draw_string.constprop.60|00001d6c|   t  |              FUNC|00000092|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:674
+u8g2_SetBufferCurrTileRow|00001dfe|   t  |              FUNC|00000026|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:100
+u8g2_send_buffer    |00001e24|   t  |              FUNC|000000b4|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:72
+RLhelper_SX1278::setDint(unsigned char)|00001ed8|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:90
+u8g2_prepare()      |00001ede|   t  |              FUNC|000001b8|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:90
+U8G2::write(unsigned char const*, unsigned int)|00002096|   t  |              FUNC|00000050|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_font.c:1201
+U8G2::write(unsigned char)|000020e6|   t  |              FUNC|000000a4|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8g2lib.h:371
+Print::flush()      |0000218a|   t  |              FUNC|00000002|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8g2lib.h:346
+Print::availableForWrite()|0000218c|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8g2lib.h:346
+SSD1306Device::ssd1306_send_data_start() [clone .constprop.14]|00002192|   t  |              FUNC|00000012|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8g2lib.h:346
+digitalWrite        |000021a4|   t  |              FUNC|0000012a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring_digital.c:240
+RLhelper_SX1278::singleTransfer(unsigned char, unsigned char)|000022ce|   t  |              FUNC|00000080|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring_digital.c:223
+RLhelper_SX1278::sleep()|0000234e|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:292
+RLhelper_SX1278::idle()|00002354|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:292
+RLhelper_SX1278::readRegister(unsigned char)|0000235a|   t  |              FUNC|00000004|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:292
+RLhelper_SX1278::setLdoFlag() [clone .constprop.31]|0000235e|   t  |              FUNC|000000b6|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:287
+RLhelper_SX1278::isTransmitting()|00002414|   t  |              FUNC|0000002e|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:450
+RLhelper_SX1278::lqi()|00002442|   t  |              FUNC|000000c6|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:460
+onReceive(unsigned char, rl_packetV1_t*)|00002508|   t  |              FUNC|000000a2|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:255
+RLhelper_SX1278::read(unsigned char*, unsigned char)|000025aa|   t  |              FUNC|00000052|     |.text	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:175
+RadioLinkClass::onRxDone(int)|000025fc|   t  |              FUNC|0000006a|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:189
+RLhelper_SX1278::handleDintRise()|00002666|   t  |              FUNC|0000006c|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:258
+RLhelper_base::onDintRise()|000026d2|   t  |              FUNC|00000006|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:163
+RLhelper_SX1278::receiveMode()|000026d8|   t  |              FUNC|0000001e|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:241
+RadioLinkClass::onTxDone()|000026f6|   t  |              FUNC|0000001c|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:211
+RLhelper_SX1278::write(unsigned char*, unsigned char)|00002712|   t  |              FUNC|0000009c|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:221
+RLhelper_SX1278::setTxPower(int)|000027ae|   t  |              FUNC|00000058|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:238
+pinMode             |00002806|   t  |              FUNC|0000004a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring_digital.c:41
+RLhelper_SX1278::onInternalRxDone(void (*)(int)) [clone .part.0]|00002850|   t  |              FUNC|0000007a|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:462
+RLhelper_SX1278::onInternalTxDone(void (*)()) [clone .part.1]|00002850|   t  |              FUNC|0000007a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring_digital.c:53
+RLhelper_SX1278::onInternalTxDone(void (*)())|000028ca|   t  |              FUNC|00000018|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:476
+RLhelper_SX1278::onInternalRxDone(void (*)(int))|000028e2|   t  |              FUNC|00000018|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:465
+RLhelper_SX1278::end()|000028fa|   t  |              FUNC|00000042|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\SPI\src/SPI.cpp:183
+RLhelper_SX1278::begin(long)|0000293c|   t  |              FUNC|000001bc|     |.text	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src\helpers\SX1278/RL_SX1278.cpp:101
+u8x8_byte_arduino_hw_i2c|00002af8|   t  |              FUNC|000000e8|     |.text
+u8x8_gpio_and_delay_arduino|00002be0|   t  |              FUNC|000000f0|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8x8lib.cpp:92
+SSD1306Device::setCursor(unsigned char, unsigned char)|00002cd0|   t  |              FUNC|00000052|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src/U8x8lib.cpp:152
+SSD1306Device::write(unsigned char)|00002d22|   t  |              FUNC|00000092|     |.text	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/tinyOLED.cpp:166
+String::reserve(unsigned int)|00002db4|   t  |              FUNC|00000050|     |.text	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/tinyOLED.cpp:228
+String::operator=(char const*) [clone .part.3]|00002e04|   t  |              FUNC|0000006a|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore\api/String.cpp:233
+u8g2_ClearBuffer    |00002e6e|   t  |              FUNC|0000002a|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:40
+u8g2_NextPage       |00002e98|   t  |              FUNC|00000052|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:116
+u8g2_FirstPage      |00002eea|   t  |              FUNC|00000022|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:107
+u8g2_ClearDisplay.constprop.64|00002f0c|   t  |              FUNC|0000001a|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_buffer.c:114
+drawMenu()          |00002f26|   t  |              FUNC|00000180|     |.text	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_cleardisplay.c:43
+__vector_15         |000030a6|   T  |              FUNC|00000062|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:202
+ovf_end             |000030c2|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:317
+higher              |000030da|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:317
+sub4                |000030e0|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:317
+sub_end             |000030fa|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:317
+__vector_5          |00003108|   T  |              FUNC|00000006|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:355
+__vector_4          |0000310e|   T  |              FUNC|00000006|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:341
+__vector_3          |00003114|   T  |              FUNC|00000006|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:328
+AttachedISR         |0000311a|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:342
+isrBody             |0000311a|   T  |              FUNC|0000008e|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:113
+AIntLoop            |00003160|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:142
+AIntEnd             |00003176|   t  |            NOTYPE|        |     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:142
+__vector_24         |000031a8|   T  |              FUNC|00000148|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:977
+global constructors keyed to 65535_0_MLA30_ping.ino.cpp.o.20536|000032f0|   t  |              FUNC|000001f4|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/twi.c:630
+main                |000034e4|   T  |              FUNC|0000039c|     |.text	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/main.cpp:49
+vfprintf            |00003880|   T  |              FUNC|00000396|     |.text
+strnlen_P           |00003c16|   T  |              FUNC|00000016|     |.text
+strnlen             |00003c2c|   T  |              FUNC|00000016|     |.text
+fputc               |00003c42|   T  |              FUNC|00000060|     |.text
+__ultoa_invert      |00003ca2|   T  |              FUNC|000000bc|     |.text
+__cmpsf2            |00003d5e|   T  |              FUNC|00000008|     |.text
+__eqsf2             |00003d5e|   T  |            NOTYPE|        |     |.text
+__lesf2             |00003d5e|   T  |            NOTYPE|        |     |.text
+__ltsf2             |00003d5e|   T  |            NOTYPE|        |     |.text
+__nesf2             |00003d5e|   T  |            NOTYPE|        |     |.text
+__floatunsisf       |00003d66|   T  |              FUNC|0000007a|     |.text
+__floatsisf         |00003d6a|   T  |            NOTYPE|        |     |.text
+__fp_cmp            |00003de0|   T  |              FUNC|00000048|     |.text
+__fp_inf            |00003e28|   T  |              FUNC|0000000c|     |.text
+__fp_nan            |00003e34|   T  |              FUNC|00000006|     |.text
+__fp_pscA           |00003e3a|   T  |              FUNC|0000000e|     |.text
+__fp_pscB           |00003e48|   T  |              FUNC|0000000e|     |.text
+__fp_round          |00003e56|   T  |              FUNC|00000022|     |.text
+__fp_split3         |00003e78|   T  |              FUNC|00000044|     |.text
+__fp_splitA         |00003e88|   T  |            NOTYPE|        |     |.text
+__fp_zero           |00003ebc|   T  |              FUNC|0000000e|     |.text
+__fp_szero          |00003ebe|   T  |            NOTYPE|        |     |.text
+__muluhisi3         |00003eca|   T  |            NOTYPE|00000014|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:626
+__prologue_saves__  |00003ede|   T  |            NOTYPE|00000032|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2169
+__epilogue_restores__|00003f10|   T  |            NOTYPE|00000030|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2222
+__umulhisi3         |00003f40|   T  |            NOTYPE|0000001e|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:564
+__subsf3            |00003f5e|   T  |              FUNC|0000000a|     |.text
+__addsf3            |00003f60|   T  |            NOTYPE|        |     |.text
+__addsf3x           |00003f82|   T  |              FUNC|000000cc|     |.text
+__stack             |00003fff|   W  |            NOTYPE|        |     |*ABS*
+__fixsfsi           |00004028|   T  |              FUNC|0000000a|     |.text
+__fixunssfsi        |00004032|   T  |              FUNC|00000058|     |.text
+__udivmodsi4        |0000408a|   T  |            NOTYPE|00000044|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1638
+__udivmodsi4_loop   |00004096|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1646
+__udivmodsi4_ep     |000040b0|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1660
+__divmodsi4         |000040ce|   T  |            NOTYPE|00000028|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1686
+__divmodsi4_neg2    |000040e6|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1701
+__divmodsi4_exit    |000040f4|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1709
+__negsi2            |000040f6|   T  |            NOTYPE|00000010|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1718
+__umoddi3           |00004106|   T  |            NOTYPE|00000004|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1806
+__udivdi3           |0000410a|   T  |            NOTYPE|00000002|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1814
+__udivdi3_umoddi3   |0000410c|   T  |            NOTYPE|00000014|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1818
+__udivmod64         |00004120|   T  |            NOTYPE|000000a2|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:1842
+__ashldi3           |000041c2|   T  |            NOTYPE|00000032|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:3169
+__ashrdi3           |000041f4|   T  |            NOTYPE|00000004|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:3122
+__lshrdi3           |000041f8|   T  |            NOTYPE|00000036|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:3131
+__tablejump2__      |0000422e|   T  |            NOTYPE|0000000c|     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2296
+malloc              |0000423a|   T  |              FUNC|00000138|     |.text
+free                |00004372|   T  |              FUNC|00000112|     |.text
+realloc             |00004484|   T  |              FUNC|0000016c|     |.text
+memcpy              |000045f0|   T  |              FUNC|00000012|     |.text
+memset              |00004602|   T  |              FUNC|0000000e|     |.text
+strcpy              |00004610|   T  |              FUNC|0000000e|     |.text
+sprintf             |0000461e|   T  |              FUNC|00000040|     |.text
+_exit               |0000465e|   T  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2278
+exit                |0000465e|   W  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2278
+__stop_program      |00004660|   t  |            NOTYPE|        |     |.text	/home/admin/Arduino/toolchain-avr-special-master/gcc-build/avr/avrxmega3/libgcc/../../../../gcc/libgcc/config/avr/lib1funcs.S:2280
+_etext              |00004662|   T  |            NOTYPE|        |     |.text
+__data_load_start   |000049ec|   A  |            NOTYPE|        |     |*ABS*
+__data_load_end     |000049f8|   A  |            NOTYPE|        |     |*ABS*
+__RODATA_PM_OFFSET__|00008000|   A  |            NOTYPE|        |     |*ABS*
+__TEXT_REGION_LENGTH__|00008000|   A  |            NOTYPE|        |     |*ABS*
+ssd1306xled_font6x8 |0000c662|   r  |            OBJECT|00000228|     |.rodata
+u8x8_d_ssd1306_128x64_noname_flip1_seq|0000c88a|   r  |            OBJECT|00000007|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:230
+u8x8_d_ssd1306_128x64_noname_flip0_seq|0000c891|   r  |            OBJECT|00000007|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:222
+u8x8_d_ssd1306_128x64_noname_powersave1_seq|0000c898|   r  |            OBJECT|00000005|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:215
+u8x8_d_ssd1306_128x64_noname_powersave0_seq|0000c89d|   r  |            OBJECT|00000005|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:208
+u8x8_d_ssd1306_128x64_noname_init_seq|0000c8a2|   r  |            OBJECT|00000035|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:42
+u8x8_ssd1306_128x64_noname_display_info|0000c8d7|   r  |            OBJECT|00000018|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8x8_d_ssd1306_128x64_noname.c:335
+digital_pin_to_timer|0000c8ef|   r  |            OBJECT|00000012|     |.rodata	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\variants\txy6/pins_arduino.h:379
+digital_pin_to_bit_position|0000c901|   r  |            OBJECT|00000012|     |.rodata	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\variants\txy6/pins_arduino.h:330
+digital_pin_to_port |0000c913|   r  |            OBJECT|00000012|     |.rodata	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\variants\txy6/pins_arduino.h:305
+digital_pin_to_bit_mask|0000c925|   r  |            OBJECT|00000012|     |.rodata	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\variants\txy6/pins_arduino.h:354
+CSWTCH.54           |0000c937|   r  |            OBJECT|0000001e|     |.rodata
+vtable for TwoWire  |0000c955|   r  |            OBJECT|00000012|     |.rodata
+vtable for RLhelper_SX1278|0000c967|   r  |            OBJECT|00000020|     |.rodata
+vtable for U8G2_SSD1306_128X64_NONAME_F_HW_I2C|0000c987|   r  |            OBJECT|0000000c|     |.rodata
+vtable for U8G2     |0000c987|   r  |            OBJECT|0000000c|     |.rodata
+u8g2_cb_r0          |0000c993|   r  |            OBJECT|00000006|     |.rodata	D:\Users\Admin\Documents\Arduino\libraries\U8g2\src\clib/u8g2_setup.c:448
+__DATA_REGION_ORIGIN__|00803800|   A  |            NOTYPE|        |     |*ABS*
+__data_start        |00803800|   D  |            NOTYPE|        |     |.data
+intFunc             |00803800|   d  |            OBJECT|00000006|     |.data	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:50
+__malloc_heap_end   |00803806|   D  |            OBJECT|00000002|     |.data
+__malloc_heap_start |00803808|   D  |            OBJECT|00000002|     |.data
+__malloc_margin     |0080380a|   D  |            OBJECT|00000002|     |.data
+__bss_start         |0080380c|   B  |            NOTYPE|        |     |.bss
+__data_end          |0080380c|   D  |            NOTYPE|        |     |.data
+_edata              |0080380c|   D  |            NOTYPE|        |     |.data
+u8x8_byte_arduino_8bit_8080mode::arduino_e_mask|0080380c|   b  |            OBJECT|00000001|     |.bss
+u8x8_byte_arduino_8bit_8080mode::arduino_e_n_mask|0080380d|   b  |            OBJECT|00000001|     |.bss
+u8x8_byte_arduino_8bit_8080mode::arduino_data_mask|0080380e|   b  |            OBJECT|00000008|     |.bss
+u8x8_byte_arduino_8bit_8080mode::arduino_data_n_mask|00803816|   b  |            OBJECT|00000008|     |.bss
+u8x8_byte_arduino_ks0108::arduino_e_mask|0080381e|   b  |            OBJECT|00000001|     |.bss
+u8x8_byte_arduino_ks0108::arduino_e_n_mask|0080381f|   b  |            OBJECT|00000001|     |.bss
+u8x8_byte_arduino_ks0108::arduino_data_mask|00803820|   b  |            OBJECT|00000008|     |.bss
+u8x8_byte_arduino_ks0108::arduino_data_n_mask|00803828|   b  |            OBJECT|00000008|     |.bss
+intFunc_C           |00803830|   b  |            OBJECT|00000008|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:48
+intFunc_B           |00803838|   b  |            OBJECT|0000000c|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:45
+intFunc_A           |00803844|   b  |            OBJECT|00000010|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/WInterrupts.c:43
+msPING              |00803854|   b  |            OBJECT|00000004|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:73
+hubRSSI             |00803858|   b  |            OBJECT|00000002|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:67
+countIN             |0080385a|   b  |            OBJECT|00000002|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:70
+msIN                |0080385c|   b  |            OBJECT|00000004|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:72
+oledX               |00803860|   b  |            OBJECT|00000001|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/tinyOLED.cpp:63
+oledY               |00803861|   b  |            OBJECT|00000001|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/tinyOLED.cpp:63
+currentPacket       |00803862|   b  |            OBJECT|00000015|     |.bss
+in_transfer.5222    |00803877|   b  |            OBJECT|00000001|     |.bss
+sleepStack          |00803878|   b  |            OBJECT|00000001|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/twi.c:34
+_onTxDone           |00803879|   b  |            OBJECT|00000002|     |.bss	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:158
+_onRxDone           |0080387b|   b  |            OBJECT|00000002|     |.bss	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:157
+_TXdone             |0080387d|   b  |            OBJECT|00000001|     |.bss	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:159
+timingStruct        |0080387e|   b  |            OBJECT|0000000a|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\cores\megatinycore/wiring.c:189
+needPing            |00803888|   b  |            OBJECT|00000001|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:68
+countOUT            |00803889|   b  |            OBJECT|00000002|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:69
+msTX                |0080388b|   b  |            OBJECT|00000004|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:74
+lastRSSI            |0080388f|   b  |            OBJECT|00000002|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:66
+msOUT               |00803891|   b  |            OBJECT|00000004|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:71
+nbSec               |00803895|   b  |            OBJECT|00000002|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:62
+oldTime             |00803897|   b  |            OBJECT|00000004|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:61
+Wire                |0080389b|   b  |            OBJECT|00000055|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\Wire\src/Wire.cpp:998
+SPI                 |008038f0|   b  |            OBJECT|0000000b|     |.bss	C:\Users\Admin\AppData\Local\Arduino15\packages\megaTinyCore\hardware\megaavr\2.6.10\libraries\SPI\src/SPI.cpp:398
+DEFAULT_SPI_SETTINGS|008038fb|   b  |            OBJECT|00000002|     |.bss
+RLhelper            |008038fd|   b  |            OBJECT|00000012|     |.bss	D:\Users\Admin\Documents\Arduino\libraries\RadioLink\src/RadioLink.cpp:153
+buf.13069           |0080390f|   b  |            OBJECT|00000400|     |.bss
+u8g2                |00803d0f|   b  |            OBJECT|00000096|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:76
+RLcomm              |00803da5|   b  |            OBJECT|00000001|     |.bss	D:\HomeAssistant\DIY\MesProjets\LoRa2HA\MLA30\MLA30-ping/MLA30-ping.ino:41
+__brkval            |00803da6|   B  |            OBJECT|00000002|     |.bss
+__flp               |00803da8|   B  |            OBJECT|00000002|     |.bss
+__bss_end           |00803daa|   B  |            NOTYPE|        |     |.bss
+__heap_start        |00803daa|   N  |            NOTYPE|        |     |.comment
+_end                |00803daa|   N  |            NOTYPE|        |     |.comment
+__eeprom_end        |00810000|   N  |            NOTYPE|        |     |.comment

@@ -1,7 +1,7 @@
 ![](https://raw.githubusercontent.com/PM04290/LoRa2HA/refs/heads/main/res/LoRa2HA-logo-200x200.png)
 # LoRa2HA
 
-Document version 1.0
+Document version 1.4
 
 ## Introduction
 LoRa2HA permet de combler un vide dans les équipements domotique lorsque qu'il est nécéssaire de surveiller/piloter sur une longue distance, là où Wifi et Zigbee ne peuvent aller.
@@ -13,4 +13,4 @@ Le projet contient les sources de tous les firmwares, les schémas des cartes, l
 
 ## Documentation
 
-Le fichier PDF de la documentation complète est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/LoRa2HA/main/doc/LoRa2HA-readme-10.pdf)
+Le fichier PDF de la documentation complète est téléchargeable [ici](https://raw.githubusercontent.com/PM04290/LoRa2HA/main/doc/LoRa2HA-readme-14.pdf)

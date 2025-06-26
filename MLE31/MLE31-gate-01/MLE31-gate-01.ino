@@ -1,5 +1,5 @@
 /*
-  Version : 1.0
+  Version : 2.0
   PCB : MLE31 V1.0
 
   PIN config ATTiny3216 (internal oscillator 4MHz)
@@ -26,8 +26,16 @@
 // (SDA)  PB1  8~ 10|_____|11  9~ PB0 (SCL)
 
 #include <Arduino.h>
-#include <RadioLink.h>
 #include <EEPROM.h>
+
+//--- debug tools ---
+#define DSerial Serial
+#define DEBUG_LED
+//#define DEBUG_SERIAL
+
+#define ML_SX1278
+#include <MLiotComm.h>
+#include <MLiotElements.h>
 
 // I/O pin
 #define PIN_IN1       PIN_PA5
@@ -38,19 +46,12 @@
 #define PIN_OUT2      PIN_PC0
 #define PIN_DEBUG_LED PIN_PC2
 
-//--- debug tools ---
-#define DEBUG_LED
-//#define DEBUG_SERIAL
-
 // EEPROM dictionnary
 #define EEP_UID         0
 #define EEP_HUBID       (EEP_UID+1)
 #define EEP_INPUT_TEMPO (EEP_HUBID+1)
 
-#include <MLiotElements.h>
-
 // LoRa
-extern RadioLinkClass RLcomm;
 extern uint8_t hubid; // Hub ID
 extern uint8_t uid;   // this module ID
 
@@ -135,26 +136,25 @@ void setup()
   EEPROM.get(EEP_HUBID, hubid);
 
   // Initialisation des Elements
-  ML_addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Ring"), stateInverted, nullptr));
-  ML_addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
-  ML_addElement(new Binary(PIN_IN3, CHILD_ID_IN3, F("Opened"), stateInverted, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Ring"), stateInverted, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
+  deviceManager.addElement(new Binary(PIN_IN3, CHILD_ID_IN3, F("Opened"), stateInverted, nullptr));
 
-  RelayOut1 = (Relay*)ML_addElement(new Relay(PIN_OUT1, CHILD_ID_OUT1, F("Command")));
+  RelayOut1 = (Relay*)deviceManager.addElement(new Relay(PIN_OUT1, CHILD_ID_OUT1, F("Command")));
 
-  Tempo = (Input*)ML_addElement(new Input(CHILD_ID_TEMPO, EEP_INPUT_TEMPO, F("Pulse time"), F("ms")));
+  Tempo = (Input*)deviceManager.addElement(new Input(CHILD_ID_TEMPO, EEP_INPUT_TEMPO, F("Pulse time"), F("ms")));
 
-  ML_addElement(new Button(CHILD_ID_BUTTON, F("Open")));
+  deviceManager.addElement(new Button(CHILD_ID_BUTTON, F("Open")));
 
-  LoraOK = RLcomm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
+  LoraOK = MLiotComm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
   if (LoraOK)
   {
-    RLcomm.setWaitOnTx(true);
     if (needPairing)
     {
       // publish config
       uint8_t h = hubid;
       hubid = RL_ID_BROADCAST;
-      ML_PublishConfigElements(F("Gate"), F("MLE31"));
+      deviceManager.publishConfigElements(F("Gate"), F("MLE31"));
       while (needPairing)
       {
         uint32_t tick = millis() / 3;
@@ -185,8 +185,8 @@ void loop()
     RelayOut1->setValue(false);
   }
 
-  ML_ProcessElements();
-  ML_SendElements();
+  deviceManager.processElements();
+  deviceManager.sendElements();
 }
 
 void onReceive(uint8_t len, rl_packet_t* pIn)

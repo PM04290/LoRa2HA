@@ -1,5 +1,5 @@
 /*
-  Version : 1.0
+  Version : 2.0
   PCB : MLE42 V1.0 + T3216
 
   ATTiny3216 (internal oscillator 4MHz)
@@ -18,8 +18,16 @@
 // (TXD)  PB2  7~  9|     |12 10~ PC0 (OUT2)
 // (SDA)  PB1  8~ 10|_____|11  9~ PB0 (SCL)
 #include <Arduino.h>
-#include <RadioLink.h>
 #include <EEPROM.h>
+
+//--- debug tools ---
+#define DSerial Serial
+#define DEBUG_LED
+//#define DEBUG_SERIAL
+
+#define ML_SX1278
+#include <MLiotComm.h>
+#include <MLiotElements.h>
 
 // EEPROM mapping (do not change order)
 #define EEP_UID               0
@@ -38,9 +46,6 @@
 // uncomment line below if have RTC DS3231Pi
 //#define HARDWARE_RTC
 
-//--- debug tools ---
-#define DEBUG_LED
-//#define DEBUG_SERIAL
 
 #ifdef DEBUG_LED
 #include <tinyNeoPixel_Static.h>
@@ -60,10 +65,9 @@ tinyNeoPixel leds = tinyNeoPixel(NUMLEDS, PIN_DEBUG_LED, NEO_GRB, pixels);
 #define LED_OFF
 #endif
 
-// RadioLink
-extern RadioLinkClass RLcomm;
 extern uint8_t hubid; // Hub ID
 extern uint8_t uid;   // this module ID
+
 bool LoraOK = false;
 const uint32_t LRfreq = 433;
 const uint8_t LRrange = 1; // 3 = 500m/1484 ms, 2 = 200m/660 ms, 1 = 100m/186 ms,  0 = 30m/27 ms
@@ -78,8 +82,6 @@ bool needPairing = false;
 #define CHILD_ID_TEMPO  7 // timer
 
 // MLiotElements
-#include <MLiotElements.h>
-
 Binary* ContactOpened;
 Binary* ContactClosed;
 Motor* Cover;
@@ -150,25 +152,23 @@ void setup()
   EEPROM.get(EEP_HUBID, hubid);
 
   // Initialisation des Elements
-  ContactOpened = (Binary*)ML_addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Opened"), stateInverted, nullptr));
-  ContactClosed = (Binary*)ML_addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
+  ContactOpened = (Binary*)deviceManager.addElement(new Binary(PIN_IN1, CHILD_ID_IN1, F("Opened"), stateInverted, nullptr));
+  ContactClosed = (Binary*)deviceManager.addElement(new Binary(PIN_IN2, CHILD_ID_IN2, F("Closed"), stateInverted, nullptr));
 
-  Tempo = (Input*)ML_addElement(new Input(CHILD_ID_TEMPO, EEP_INPUT_TEMPO, F("Move time"), F("s")));
+  Tempo = (Input*)deviceManager.addElement(new Input(CHILD_ID_TEMPO, EEP_INPUT_TEMPO, F("Move time"), F("s")));
 
-  Cover = (Motor*)ML_addElement(new Motor(PIN_OUT1, PIN_OUT2, CHILD_ID_OUT1, F("Door")));
+  Cover = (Motor*)deviceManager.addElement(new Motor(PIN_OUT1, PIN_OUT2, CHILD_ID_OUT1, F("Door")));
   Cover->setTimer(Tempo->getValue());
   Cover->setLimits(ContactOpened, ContactClosed);
 
-  LoraOK = RLcomm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
+  LoraOK = MLiotComm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
   if (LoraOK)
   {
-    RLcomm.setWaitOnTx(true);
     if (needPairing)
     {
       // publish config
-      uint8_t h = hubid;
       hubid = RL_ID_BROADCAST;
-      ML_PublishConfigElements(F("HenHouse"), F("MLE42"));
+      deviceManager.publishConfigElements(F("HenHouse"), F("MLE42"));
       while (needPairing)
       {
         uint32_t tick = millis() / 3;
@@ -224,8 +224,8 @@ void loop()
       LED_OFF;
     }
   }
-  ML_ProcessElements();
-  ML_SendElements();
+  deviceManager.processElements();
+  deviceManager.sendElements();
 }
 
 void onReceive(uint8_t len, rl_packet_t* pIn)

@@ -1,5 +1,5 @@
 /*
-  Version 1.0
+  Version 2.0
   Designed for ATTiny3216 (internal oscillator 1MHz)
   Hardware : MLA30 > 2.0
 
@@ -22,11 +22,15 @@
 // (SDA)  PB1  8~ 10|_____|11  9~ PB0 (SCL)
 
 #include <Arduino.h>
-#include <RadioLink.h>
 #include <EEPROM.h>
 #include <U8g2lib.h>
 #include <Wire.h>
 
+#define DSerial Serial
+
+#define ML_SX1278
+#include <MLiotComm.h>
+iotCommClass MLiotComm;
 
 //--- I/O pin ---
 #define PIN_IN1       PIN_PA5
@@ -38,7 +42,6 @@
 #define PIN_DEBUG_LED PIN_PC2
 
 // LoRa
-RadioLinkClass RLcomm;
 
 const uint32_t LRfreq = 433;
 const uint8_t  LRrange = 1;
@@ -88,10 +91,9 @@ void setup()
  
   // start LoRa module
   String msg;
-  LoraOK = RLcomm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
+  LoraOK = MLiotComm.begin(LRfreq * 1E6, onReceive, NULL, 14, LRrange);
   if (LoraOK)
   {
-    RLcomm.setWaitOnTx(true);
     msg = "LoRa OK";
   } else
   {
@@ -120,7 +122,7 @@ void loop()
   {
     nbSec = 0;
     msOUT = millis();
-    RLcomm.publishNum(HUB_ID, RL_ID_PING, RL_ID_PING, lastRSSI);
+    MLiotComm.publishNum(HUB_ID, RL_ID_PING, RL_ID_PING, lastRSSI);
     msTX = millis();
     countOUT++;
     drawMenu();
@@ -151,7 +153,7 @@ void drawMenu()
     sprintf(msg, "Out:%4d In :%4d", countOUT, countIN);
     u8g2.drawStr(0, 18, msg);
 
-    sprintf(msg, "   Tx   %4d ms", msTX - msOUT);
+    sprintf(msg, "   Tx   %4d ms", (int)(msTX - msOUT));
     u8g2.drawStr(0, 34, msg);
 
     sprintf(msg, "   Ping %4d ms", msPING);
@@ -170,7 +172,7 @@ void onReceive(uint8_t len, rl_packet_t* pIn)
     msIN = millis();
     countIN++;
     hubRSSI = pIn->data.num.value;
-    lastRSSI = RLcomm.lqi();
+    lastRSSI = MLiotComm.lqi();
     msPING = msIN - msOUT;
     needPing = true;
     return;
